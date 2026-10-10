@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOGMA RESIST — 2040 / KAWAGUCHI, SAITAMA</title>
+<!--
+  ============================================================
+  DOGMA RESIST · 단일 파일 사이트 v2 (GitHub Pages용)
+  ------------------------------------------------------------
+  [디자인 컨셉 — "THE RULE"]
+    DOGMA = 1px 직선(rule). 사람을 정해진 방향으로만 가게 하는 선.
+    RESIST = 그 선이 꺾이는 지점.
+    → 사이트 전체를 관통하는 단 하나의 SVG 선(THREAD)이
+      HERO의 가로선에서 시작해 01 가로 rule → 02 중앙 세로 divider →
+      03 이름 baseline → 04 timeline rail로 직각으로만 꺾이며 이어지고,
+      스크롤에 따라 그려진다. 선의 끝(현재 위치)에는 green 마커.
+    → 03의 각 DOGMA 문장은 [RESIST] 버튼으로 SVG 취소선을 그어
+      "교리에 저항"할 수 있다. 저항 수는 상단 카운터에 기록된다.
+
+  [폴더 구조]
+    index.html
+    assets/audio/bgm.mp3
+    assets/images/hero-cast.png
+    assets/images/city/  city-redevelopment / city-night / city-arakawa / city-industrial .png
+    assets/images/entry/ entry-todogumi / entry-kawaguchi .png
+    assets/images/cast/  cast-mai / natsume / nana / miu / kazuki / azusa .png
+    assets/images/timeline/ timeline-todogumi / kiyomizu / redevelopment / now .png
+
+  [경로] GitHub Pages 프로젝트 사이트 대응을 위해 상대경로 "assets/..." 사용.
+
+  [VS Code 검색 키]
+    "PAGE 0"  → 각 챕터 HTML / CSS
+    "[CSS "   → 스타일 블록
+    "[JS "    → 기능 블록
+    "data-thread" → THREAD 선이 지나가는 지점(꺾이는 지점) 편집
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Noto+Serif+JP:wght@300;500&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   [CSS 01] 디자인 토큰 — 전 구간 공통
+   ============================================================ */
+:root{
+  --black:#111312; --ink:#1d201e; --mute:#5d625f;
+  --green:#1f4a3a; --green-hi:#2f6f56;
+  --rule:1px solid var(--ink);
+  --bg-00:#BFC1BF; --bg-01:#D2D3D1; --bg-02:#C5C6C4;
+  --bg-03:#B9BBB9; --bg-03b:#CDCECC; --bg-04:#AEB0AE;
+  --serif:"Noto Serif KR","Noto Serif JP",serif;
+  --jp:"Noto Serif JP",serif;
+  --sans:"Inter","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --pad:clamp(20px,5vw,72px);
+  --ease:cubic-bezier(.2,.7,.2,1);
+  --dur:700ms;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:auto}
+body{background:var(--bg-00);color:var(--ink);font-family:var(--serif);font-weight:300;line-height:1.85;
+  -webkit-font-smoothing:antialiased;transition:background-color 1100ms var(--ease);overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+.sans{font-family:var(--sans);letter-spacing:.14em;text-transform:uppercase;font-size:11px;font-weight:400}
+.mono{font-family:var(--mono);font-size:10px;letter-spacing:.06em}
+.jp{font-family:var(--jp)}
+body.is-intro{overflow:hidden}
+::selection{background:var(--green);color:#e8eae8}
+
+/* ============================================================
+   [CSS 02] 이미지 placeholder (PNG 투명도 보존 / 실패 시 gray + 파일명)
+   ============================================================ */
+.ph{position:relative;overflow:hidden;background:transparent}
+.ph img{width:100%;height:100%;object-fit:cover;transition:transform 900ms var(--ease)}
+.ph.missing{background:#a3a6a4}
+.ph.missing img{display:none}
+.ph.missing::after{content:attr(data-file);position:absolute;left:10px;bottom:8px;font-family:var(--mono);font-size:10px;color:rgba(17,19,18,.55)}
+
+/* 크롭마크 (JS가 SVG를 주입: [JS 03]) */
+.crop{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:visible}
+.crop path{fill:none;stroke:var(--ink);stroke-width:1;vector-effect:non-scaling-stroke}
+
+/* ============================================================
+   [CSS 03] THE THREAD — 사이트 전체를 관통하는 SVG 선
+   ============================================================ */
+#thread{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:4;overflow:visible}
+#thread .ghost{fill:none;stroke:rgba(17,19,18,.14);stroke-width:1}
+#thread .live{fill:none;stroke:var(--ink);stroke-width:1}
+#thread .head{fill:var(--green)}
+#thread .head-ring{fill:none;stroke:var(--green);stroke-width:1;opacity:.5}
+#thread .knot{fill:var(--bg-02);stroke:var(--ink);stroke-width:1}
+#thread .knot.on{fill:var(--green);stroke:var(--green)}
+body.is-intro #thread{opacity:0}
+#thread{transition:opacity 900ms var(--ease)}
+
+/* ============================================================
+   [CSS 04] 고정 UI — brand / nav / folio / resist counter / sound
+   ============================================================ */
+.brand-mini{position:fixed;top:22px;left:var(--pad);z-index:50;font-family:var(--sans);font-size:11px;letter-spacing:.24em;transition:opacity var(--dur) var(--ease)}
+body.is-intro .brand-mini{opacity:0}
+
+.nav{position:fixed;top:22px;right:var(--pad);z-index:50;display:flex;gap:18px;align-items:center;transition:opacity var(--dur) var(--ease)}
+.nav a{position:relative;font-family:var(--sans);font-size:11px;letter-spacing:.12em;opacity:.5;transition:color .4s,opacity .4s;padding-bottom:4px}
+.nav a:hover{opacity:1}
+.nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)}
+.nav a.active{color:var(--green);opacity:1;font-weight:500}
+.nav a.active::after{transform:scaleX(1)}
+/* nav 아래 미세 진행선: 현재 챕터 내부 진행률 */
+.nav-prog{position:absolute;left:0;right:0;top:calc(100% + 6px);height:1px;background:rgba(17,19,18,.15)}
+.nav-prog i{display:block;height:100%;width:0;background:var(--ink)}
+body.is-intro .nav{opacity:.18;pointer-events:none}
+
+/* folio — 잡지 페이지 번호. 챕터가 바뀌면 mask로 교체 */
+.folio{position:fixed;left:var(--pad);bottom:22px;z-index:50;display:flex;gap:14px;align-items:baseline;transition:opacity var(--dur)}
+.folio .win{height:14px;overflow:hidden;display:inline-block}
+.folio .win span{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.2em;line-height:14px;transition:transform 600ms var(--ease)}
+.folio .jp{font-size:10px;letter-spacing:.3em;color:var(--mute)}
+body.is-intro .folio{opacity:0}
+
+.resist-count{position:fixed;right:var(--pad);top:52px;z-index:50;font-family:var(--mono);font-size:10px;color:var(--mute);opacity:0;transition:opacity .6s}
+.resist-count.show{opacity:1}
+.resist-count b{color:var(--green);font-weight:400}
+
+.sound{position:fixed;right:var(--pad);bottom:22px;z-index:50;display:flex;align-items:center;gap:8px;background:none;border:0;cursor:pointer;
+  font-family:var(--sans);font-size:10px;letter-spacing:.16em;opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease)}
+.sound.ready{opacity:.8;pointer-events:auto}
+.sound.ready:hover{opacity:1}
+.sound svg{width:22px;height:10px;overflow:visible}
+.sound svg polyline{fill:none;stroke:currentColor;stroke-width:1}
+.sound.on{color:var(--green)}
+.sound[hidden]{display:none}
+
+/* 커서 뷰파인더 (01 사진 위에서만, [JS 08]) */
+.finder{position:fixed;left:0;top:0;z-index:60;pointer-events:none;opacity:0;transition:opacity .25s}
+.finder.on{opacity:1}
+.finder svg{position:absolute;left:-20px;top:-20px;width:40px;height:40px;overflow:visible}
+.finder svg path{fill:none;stroke:#111;stroke-width:1}
+.finder .lab{position:absolute;left:16px;top:14px;white-space:nowrap;font-family:var(--mono);font-size:9.5px;color:#111;background:rgba(210,211,209,.85);padding:1px 4px}
+
+/* ============================================================
+   [CSS 05] 공통 section · 번호 · reveal
+   ============================================================ */
+.chapter{position:relative;padding:0 var(--pad)}
+.idx{font-family:var(--sans);font-size:11px;letter-spacing:.2em;display:flex;align-items:center;gap:12px}
+.idx b{font-weight:500;font-size:13px}
+.idx::after{content:"";width:48px;height:1px;background:currentColor}
+.rv{opacity:0;transform:translateY(14px);transition:opacity 700ms var(--ease),transform 700ms var(--ease)}
+.rv.in{opacity:1;transform:none}
+.rv-mask{clip-path:inset(0 0 100% 0);transition:clip-path 800ms var(--ease)}
+.rv-mask.in{clip-path:inset(0 0 0 0)}
+.rv-clip{clip-path:inset(0 100% 0 0);transition:clip-path 900ms var(--ease)}
+.rv-clip.in{clip-path:inset(0 0 0 0)}
+.next{display:inline-flex;align-items:center;gap:12px;font-family:var(--sans);font-size:10px;letter-spacing:.2em;border-bottom:1px solid var(--ink);padding:4px 0;opacity:.7;transition:opacity .4s,color .4s,border-color .4s,gap .4s}
+.next:hover{opacity:1;color:var(--green);border-color:var(--green);gap:22px}
+
+/* ============================================================
+   PAGE 00 — HERO  CSS
+   ============================================================ */
+#hero{height:100vh;min-height:620px;padding:0;overflow:hidden;color:var(--black)}
+#hero .hero-bg{position:absolute;inset:-2%;transition:transform 900ms var(--ease)}
+#hero .hero-bg.missing{background:#b3b5b3}
+#hero .hero-bg img{object-position:center 30%}
+body.is-intro #hero .hero-bg{transform:scale(1.04)}
+
+/* 시네마 프레임: 레터박스 rule + 코너 레지스트레이션 마크 (SVG) */
+.frame{position:absolute;inset:calc(var(--pad) * .6);pointer-events:none;z-index:2}
+.frame svg{width:100%;height:100%;overflow:visible}
+.frame path,.frame line{fill:none;stroke:var(--black);stroke-width:1;vector-effect:non-scaling-stroke}
+.frame circle{fill:none;stroke:var(--black);stroke-width:1;vector-effect:non-scaling-stroke}
+.frame .draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 900ms var(--ease)}
+body.entered .frame .draw{stroke-dashoffset:0}
+
+.logo-v{position:absolute;left:var(--pad);top:50%;transform:translateY(-50%);writing-mode:vertical-rl;z-index:3;
+  font-family:var(--sans);font-weight:500;letter-spacing:.32em;font-size:clamp(46px,8.4vh,96px);line-height:1;transition:all 800ms var(--ease)}
+.logo-v span{display:block}
+.logo-v .jp-sub{font-family:var(--jp);font-size:.22em;letter-spacing:.5em;font-weight:300;margin-right:.6em;opacity:.75}
+/* RESIST 글자에 1px 취소선 → 저항의 상징: ENTER 시 선이 '꺾여' 빠져나감 */
+.logo-v .rs{position:relative;display:inline-block}
+.logo-v .rs::after{content:"";position:absolute;top:-4%;bottom:-4%;left:50%;width:1px;background:var(--green);transform-origin:top;transform:scaleY(0);transition:transform 900ms var(--ease) 300ms}
+body.entered .logo-v .rs::after{transform:scaleY(1)}
+body.entered .logo-v{font-size:clamp(38px,6.6vh,74px);top:46%}
+
+.hero-meta{position:absolute;right:var(--pad);bottom:var(--pad);text-align:right;z-index:3}
+.hero-meta .yr{font-family:var(--sans);font-weight:300;font-size:clamp(64px,12vw,180px);line-height:.9;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero-meta .loc{font-family:var(--sans);font-size:12px;letter-spacing:.32em;margin-top:14px}
+.hero-meta .tag{font-size:13px;margin-top:22px;opacity:0;transform:translateY(8px);transition:all 800ms var(--ease) 200ms}
+body.entered .hero-meta .tag{opacity:.85;transform:none}
+
+/* 슬레이트 정보 (좌상단): 좌표 · 타임코드 — ENTER 후 작동 */
+.slate{position:absolute;top:24px;left:calc(var(--pad) + 120px);z-index:3;display:grid;gap:4px;opacity:0;transition:opacity 700ms var(--ease) 300ms}
+body.entered .slate{opacity:1}
+.slate .mono{color:var(--black)}
+
+.hero-rule{position:absolute;left:calc(var(--pad) + 120px);right:var(--pad);bottom:calc(var(--pad) + 4px);height:1px;z-index:3}
+.enter{position:absolute;left:calc(var(--pad) + 120px);bottom:calc(var(--pad) + 18px);z-index:5;background:none;border:0;border-radius:0;
+  padding:8px 22px 8px 0;cursor:pointer;color:var(--black);font-family:var(--sans);font-size:11px;letter-spacing:.36em;display:flex;align-items:center;gap:14px;transition:opacity 600ms var(--ease),color .3s}
+.enter svg{width:60px;height:9px;overflow:visible}
+.enter svg path{fill:none;stroke:currentColor;stroke-width:1;transition:d .5s var(--ease)}
+.enter:hover{color:var(--green)}
+.enter:hover svg path{d:path("M0 4.5 H60 M54 0 L60 4.5 L54 9")}
+body.entered .enter{opacity:0;pointer-events:none}
+.scroll-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);opacity:0;z-index:3;transition:opacity 800ms var(--ease) 500ms}
+body.entered .scroll-hint{opacity:.6}
+
+/* ============================================================
+   PAGE 01 — KAWAGUCHI  CSS
+   ============================================================ */
+#kawaguchi{padding-top:18vh}
+#kawaguchi .head{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;align-items:end;padding-bottom:28px}
+#kawaguchi .head .idx{grid-column:1/4}
+#kawaguchi h2{grid-column:4/13;font-weight:300;font-size:clamp(34px,4.6vw,64px);line-height:1.15}
+#kawaguchi h2 .jp{display:block;font-size:.32em;letter-spacing:.4em;color:var(--mute);margin-top:10px}
+.k-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;margin-top:12vh}
+.k-cap{font-family:var(--mono);font-size:10px;color:var(--mute);margin-top:10px;display:flex;justify-content:space-between;gap:12px}
+.k-cap b{font-weight:400;color:var(--ink)}
+.k-shot{cursor:none}
+.k-shot:hover img{transform:scale(1.03)}
+.k-a{grid-column:1/9}.k-a .ph{aspect-ratio:16/9}
+.k-side{grid-column:9/13;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.k-prose{font-size:15px}
+.k-b{grid-column:4/8;margin-top:14vh}.k-b .ph{aspect-ratio:4/5}
+.k-c{grid-column:9/13;margin-top:28vh}.k-c .ph{aspect-ratio:3/2}
+.k-wide{grid-column:3/11;margin-top:14vh;font-size:clamp(16px,1.35vw,19px);column-count:2;column-gap:48px;column-rule:1px solid rgba(17,19,18,.2)}
+.k-wide p:first-child::first-letter{font-size:3.2em;float:left;line-height:.9;margin:.06em .12em 0 0;font-weight:400}
+.k-d{grid-column:1/13;margin-top:14vh}.k-d .ph{aspect-ratio:21/8}
+
+/* 아라카와 schematic map (SVG, 직선만) — 사진 hover 시 위치가 점등 */
+.kmap{border-top:var(--rule);padding-top:12px}
+.kmap svg{width:100%;height:auto;overflow:visible}
+.kmap .river{fill:none;stroke:var(--ink);stroke-width:1}
+.kmap .river2{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:2 3;opacity:.5}
+.kmap .rail{fill:none;stroke:var(--ink);stroke-width:1;opacity:.35}
+.kmap .pt rect{fill:var(--bg-01);stroke:var(--ink);stroke-width:1;transition:fill .3s}
+.kmap .pt text{font-family:var(--mono);font-size:8px;fill:var(--mute);transition:fill .3s}
+.kmap .pt line{stroke:var(--green);stroke-width:1;stroke-dasharray:40;stroke-dashoffset:40;transition:stroke-dashoffset .5s var(--ease)}
+.kmap .pt.on rect{fill:var(--green);stroke:var(--green)}
+.kmap .pt.on text{fill:var(--green)}
+.kmap .pt.on line{stroke-dashoffset:0}
+.kmap .lbl{font-family:var(--mono);font-size:7.5px;fill:var(--mute);letter-spacing:.08em}
+.k-end{position:relative;height:24vh;margin-top:12vh}
+.k-end .next{position:absolute;left:0;top:18px}
+
+/* ============================================================
+   PAGE 02 — ENTRY POINT  CSS
+   ============================================================ */
+.e-top{display:grid;grid-template-columns:1fr 1fr}
+.e-top .idx{padding:28px 0 0}
+.e-top h2{grid-column:2;padding:28px 0 0 36px;font-weight:300;font-size:clamp(26px,3vw,42px);line-height:1.2}
+.e-top h2 .jp{display:block;font-size:.4em;letter-spacing:.4em;color:var(--mute)}
+.spread{display:grid;grid-template-columns:1fr 1fr;position:relative;margin-top:8vh;border-top:var(--rule);border-bottom:var(--rule)}
+.route{position:relative;padding:48px 36px 56px;display:flex;flex-direction:column;gap:28px;transition:opacity .6s var(--ease),background-color .6s}
+.route:nth-child(1){padding-left:0}
+.route:nth-child(2){padding-right:0;background:rgba(255,255,255,.06)}
+.spread:hover .route:not(:hover){opacity:.5}
+.route .letter{font-family:var(--sans);font-weight:300;font-size:clamp(90px,13vw,200px);line-height:.8;letter-spacing:-.04em;position:relative}
+/* letter 옆 SVG 지시선: hover 시 divider에서 해당 route 쪽으로 그어짐 */
+.route .ptr{position:absolute;top:calc(48px + clamp(90px,13vw,200px) * .4);height:9px;width:calc(100% - 36px);pointer-events:none;overflow:visible}
+.route:nth-child(1) .ptr{right:0;transform:scaleX(-1)}
+.route:nth-child(2) .ptr{left:0}
+.route .ptr path{fill:none;stroke:var(--green);stroke-width:1;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .6s var(--ease)}
+.route:hover .ptr path{stroke-dashoffset:0}
+.route .img{aspect-ratio:4/3}
+.route:hover .img img{transform:scale(1.03)}
+.route h3{font-weight:400;font-size:clamp(20px,1.8vw,26px);line-height:1.4}
+.route h3 .jp{display:block;font-size:12px;letter-spacing:.3em;color:var(--mute)}
+.route p{font-size:14.5px;max-width:34em}
+.route .meta{display:flex;justify-content:space-between;border-top:1px solid rgba(17,19,18,.25);padding-top:10px}
+.route .go{display:flex;align-items:center;gap:10px;font-family:var(--sans);font-size:10px;letter-spacing:.2em;transition:color .4s}
+.route:hover .go{color:var(--green)}
+.e-end{position:relative;height:20vh}
+.e-end .next{position:absolute;left:calc(50% + 24px);bottom:20px}
+
+/* ============================================================
+   PAGE 03 — PEOPLE / DOGMA  CSS
+   ============================================================ */
+#people{padding:0;overflow:hidden}
+.p-head{padding:12vh var(--pad) 6vh;display:grid;grid-template-columns:repeat(12,1fr);gap:24px;align-items:end}
+.p-head .idx{grid-column:1/4}
+.p-head h2{grid-column:4/13;font-family:var(--sans);font-weight:300;font-size:clamp(48px,8vw,128px);line-height:.9;letter-spacing:-.03em}
+.p-head h2 .jp{display:block;font-size:.14em;letter-spacing:.5em;margin-top:16px;color:var(--mute)}
+.p-head .how{grid-column:4/10;font-size:13px;color:var(--mute);margin-top:18px}
+.p-base{height:1px;margin:0 var(--pad) 0 50%}
+
+/* 인물 sub-index (03 구간에서만 표시, 좌측 fixed 세로) */
+.p-index{position:fixed;left:calc(var(--pad) * .35);top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:10px;opacity:0;pointer-events:none;transition:opacity .6s}
+body[data-sec="people"] .p-index{opacity:1;pointer-events:auto}
+.p-index a{writing-mode:vertical-rl;font-family:var(--jp);font-size:11px;letter-spacing:.2em;opacity:.4;transition:opacity .3s,color .3s;border-right:1px solid transparent;padding-right:4px}
+.p-index a.on{opacity:1;color:var(--green);border-color:var(--green)}
+.p-index a:hover{opacity:1}
+
+.person{position:relative;display:grid;grid-template-columns:repeat(12,1fr);gap:24px;padding:0 var(--pad)}
+.person + .person{margin-top:22vh}
+.person .img{position:relative}
+.person .name{font-weight:400;font-size:clamp(34px,4.4vw,66px);line-height:1.1;letter-spacing:-.01em}
+.person .name small{display:block;font-family:var(--jp);font-size:.36em;letter-spacing:.35em;font-weight:300;color:var(--mute);margin-top:8px}
+.person .role{font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;color:var(--mute);margin-top:18px}
+.person .vig{font-size:15.5px;margin-top:28px}
+.person .vig p + p{margin-top:.9em}
+/* 이미지: 마우스 위치로 아주 미세한 crop 이동 (패닝) [JS 10] */
+.person .img img{transform:translate(var(--mx,0),var(--my,0)) scale(1.06)}
+
+/* DOGMA + RESIST 인터랙션 */
+.dogma{margin-top:34px;padding-top:14px;border-top:var(--rule)}
+.dogma .bar{display:flex;justify-content:space-between;align-items:center}
+.dogma .bar .sans{color:var(--green)}
+.dogma .q{position:relative;display:inline-block;font-size:clamp(18px,1.6vw,23px);font-weight:400;margin-top:8px;transition:color .6s}
+.dogma .q svg{position:absolute;left:-4px;top:0;width:calc(100% + 8px);height:100%;overflow:visible;pointer-events:none}
+.dogma .q svg path{fill:none;stroke:var(--green);stroke-width:1.2;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .7s var(--ease)}
+.resist-btn{background:none;border:0;border-bottom:1px solid currentColor;border-radius:0;cursor:pointer;font-family:var(--sans);font-size:9.5px;letter-spacing:.24em;padding:2px 0;opacity:.6;transition:opacity .3s,color .3s}
+.resist-btn:hover{opacity:1;color:var(--green)}
+.dogma.resisted .q{color:var(--mute)}
+.dogma.resisted .q svg path{stroke-dashoffset:0}
+.dogma.resisted .resist-btn{color:var(--green);opacity:1}
+.dogma .after{font-family:var(--mono);font-size:10px;color:var(--green);height:0;overflow:hidden;opacity:0;transition:all .5s var(--ease)}
+.dogma.resisted .after{height:18px;opacity:1;margin-top:8px}
+
+.deco-jp{font-family:var(--jp);font-weight:300;color:rgba(17,19,18,.08);line-height:.9;pointer-events:none;user-select:none;position:absolute;transition:transform 1.2s var(--ease)}
+
+.p-mai{padding-top:10vh;padding-bottom:6vh}
+.p-mai .img{grid-column:1/7;margin-left:calc(var(--pad) * -1);aspect-ratio:4/5}
+.p-mai .txt{grid-column:8/12;align-self:center}
+.p-mai .deco-jp{right:2vw;top:-4vh;font-size:22vw}
+.p-natsume{background:var(--bg-03b);padding-top:12vh;padding-bottom:12vh}
+.p-natsume .num{grid-column:1/3;font-family:var(--sans);font-weight:300;font-size:clamp(120px,18vw,280px);line-height:.8;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.p-natsume .txt{grid-column:3/7;align-self:end}
+.p-natsume .img{grid-column:8/13;margin-right:calc(var(--pad) * -1);aspect-ratio:3/4}
+.p-nana .img{grid-column:5/11;aspect-ratio:5/6}
+.p-nana .txt{grid-column:11/13;align-self:end}
+.p-nana .txt .vig{font-size:14px}
+.p-nana .name-out{grid-column:1/5;padding-top:8vh}
+.p-nana .deco-jp{left:var(--pad);bottom:-3vh;font-size:13vw}
+.p-miu{background:var(--bg-03b);padding-top:34vh}
+.p-miu .txt{grid-column:2/6;margin-top:-22vh}
+.p-miu .img{grid-column:7/13;margin-right:calc(var(--pad) * -1);aspect-ratio:16/11;align-self:end}
+.p-kazuki{padding-top:10vh}
+.p-kazuki .vjp{grid-column:1/3;writing-mode:vertical-rl;font-family:var(--jp);font-weight:300;font-size:clamp(56px,7vw,110px);letter-spacing:.2em;line-height:1;border-right:var(--rule);padding-right:20px;justify-self:start}
+.p-kazuki .vjp small{font-size:.18em;letter-spacing:.5em;margin-top:.6em;color:var(--mute)}
+.p-kazuki .img{grid-column:3/8;aspect-ratio:3/4}
+.p-kazuki .txt{grid-column:9/13;align-self:center}
+.p-azusa{padding:0;display:block}
+.p-azusa .img{width:100%;aspect-ratio:21/8}
+.p-azusa .txt{display:grid;grid-template-columns:repeat(12,1fr);gap:24px;padding:6vh var(--pad) 0}
+.p-azusa .txt .left{grid-column:1/5}
+.p-azusa .txt .right{grid-column:8/12}
+.p-end{position:relative;height:22vh;margin-top:14vh}
+.p-end .next{position:absolute;right:var(--pad);top:18px}
+
+/* ============================================================
+   PAGE 04 — TIMELINE  CSS
+   ============================================================ */
+#timeline{padding-bottom:0}
+.t-head{display:grid;grid-template-columns:30% 1fr;padding-top:6vh}
+.t-head .idx{padding-right:24px;justify-self:end}
+.t-head h2{padding-left:48px;font-family:var(--sans);font-weight:300;font-size:clamp(22px,2.2vw,30px);letter-spacing:.24em}
+.t-head h2 .jp{display:block;font-size:12px;letter-spacing:.4em;color:var(--mute);margin-top:8px}
+/* sticky 연도 카운터 — 스크롤로 연도가 scrub 됨 */
+.t-clock{position:sticky;top:40vh;height:0;z-index:5;pointer-events:none}
+.t-clock div{position:absolute;left:0;width:calc(30% - 40px);text-align:right;font-family:var(--mono);font-size:10px;color:var(--mute)}
+.t-clock b{display:block;font-family:var(--sans);font-weight:300;font-size:clamp(14px,1.2vw,18px);letter-spacing:.2em;color:var(--ink);font-variant-numeric:tabular-nums}
+.rail{position:relative;margin-top:10vh}
+/* 연도 눈금자 SVG ([JS 12]가 생성) */
+#ruler{position:absolute;left:30%;top:0;width:14px;height:100%;transform:translateX(-14px);overflow:visible;pointer-events:none}
+#ruler line{stroke:var(--ink);stroke-width:1;opacity:.45}
+#ruler line.major{opacity:.9}
+#ruler text{font-family:var(--mono);font-size:8px;fill:var(--mute)}
+.ev{display:grid;grid-template-columns:30% 1fr;min-height:46vh;position:relative}
+.ev .yr{justify-self:end;padding-right:32px;font-family:var(--sans);font-weight:300;font-size:clamp(44px,6vw,92px);line-height:.9;letter-spacing:-.03em;transition:color .5s}
+.ev .body{padding-left:48px;display:grid;grid-template-columns:minmax(0,28em) 160px;gap:40px;align-items:start}
+.ev .body h3{font-weight:400;font-size:18px}
+.ev .body h3 .jp{display:block;font-size:11px;letter-spacing:.3em;color:var(--mute)}
+.ev .body p{font-size:14.5px;margin-top:12px}
+.arc-btn{display:block;background:none;border:0;padding:0;cursor:zoom-in;text-align:left}
+.arc{width:160px;aspect-ratio:1/1;filter:grayscale(1) contrast(1.05);transition:filter .5s}
+.arc-btn:hover .arc{filter:none}
+.ev.cur .yr{color:var(--green)}
+.ev.now{min-height:80vh}
+.ev.now .yr{font-size:clamp(70px,10vw,150px)}
+/* archival lightbox — 사각형, rounded 없음 */
+.lb{position:fixed;inset:0;z-index:90;background:rgba(174,176,174,.94);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .4s}
+.lb.on{opacity:1;pointer-events:auto}
+.lb figure{width:min(70vw,720px);aspect-ratio:1/1;border:var(--rule);clip-path:inset(0 0 100% 0);transition:clip-path .6s var(--ease)}
+.lb.on figure{clip-path:inset(0)}
+.lb .cap{position:absolute;left:var(--pad);bottom:22px;font-family:var(--mono);font-size:10px}
+.lb .x{position:absolute;right:var(--pad);top:22px;background:none;border:0;border-bottom:1px solid;cursor:pointer;font-family:var(--sans);font-size:10px;letter-spacing:.2em}
+
+/* ============================================================
+   [CSS 99] MOBILE
+   ============================================================ */
+@media (max-width:820px){
+  .nav{gap:12px;top:16px}.brand-mini{top:16px}
+  .sound{bottom:16px}.folio{bottom:16px}
+  .resist-count{top:42px}
+  .finder,.p-index{display:none}
+  .k-shot{cursor:auto}
+  .logo-v{font-size:44px;top:46%} body.entered .logo-v{font-size:38px}
+  .hero-meta .yr{font-size:72px}
+  .enter{left:var(--pad);bottom:calc(var(--pad) + 120px)}
+  .hero-rule{left:var(--pad)}
+  .slate{left:var(--pad);top:56px}
+  .scroll-hint{display:none}
+  #kawaguchi .head,.k-grid{grid-template-columns:1fr;gap:16px}
+  #kawaguchi .head>*,.k-grid>*{grid-column:1/-1 !important}
+  .k-b,.k-c,.k-d,.k-wide{margin-top:8vh}
+  .k-b{width:72%;justify-self:end}
+  .k-wide{column-count:1}
+  .e-top,.spread{grid-template-columns:1fr}
+  .e-top h2{grid-column:1;padding:12px 0 0}
+  .route,.route:nth-child(1),.route:nth-child(2){padding:36px 0}
+  .route + .route{border-top:var(--rule)}
+  .route .ptr{display:none}
+  .spread:hover .route:not(:hover){opacity:1}
+  .e-end .next{left:calc(var(--pad) + 18px)}
+  .p-head{grid-template-columns:1fr}.p-head>*{grid-column:1 !important}
+  .p-base{margin-left:var(--pad)}
+  .person,.p-azusa .txt{display:flex;flex-direction:column}
+  .person + .person{margin-top:12vh}
+  .person .img{order:1;margin:0 !important;width:100%}
+  .person .txt,.person .name-out,.p-azusa .txt .left,.p-azusa .txt .right{order:2;margin-top:24px !important}
+  .p-natsume .num{order:0;font-size:96px}
+  .p-kazuki .vjp{order:0;font-size:48px;margin-bottom:16px;border-right:0}
+  .p-miu{padding-top:12vh}
+  .p-mai .img,.p-natsume .img,.p-miu .img{width:calc(100% + var(--pad))}
+  .p-mai .img{margin-left:calc(var(--pad) * -1) !important}
+  .p-natsume .img,.p-miu .img{margin-right:calc(var(--pad) * -1) !important}
+  .deco-jp{display:none}
+  .t-head{grid-template-columns:1fr;padding-left:24px}
+  .t-head .idx{justify-self:start}.t-head h2{padding-left:0;margin-top:8px}
+  .t-clock{display:none}
+  #ruler{left:0;transform:none}
+  .ev{grid-template-columns:1fr;padding-left:24px;min-height:auto;padding-bottom:12vh}
+  .ev .yr{justify-self:start;padding:0;font-size:48px}
+  .ev .body{padding-left:0;grid-template-columns:1fr;gap:16px;margin-top:16px}
+  .arc{width:120px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:1ms !important;animation:none !important}
+  .rv,.rv-mask,.rv-clip{opacity:1;transform:none;clip-path:none}
+}
+
+/* ============================================================
+   [CSS 100] v3 TAILORED LAYER — 질감 · 리더 · 신호 · 테이프 · 도장
+   ============================================================ */
+/* 필름 그레인: SVG feTurbulence를 data-URI 대신 인라인 svg로, steps 지터 */
+.grain{position:fixed;inset:-50%;z-index:80;pointer-events:none;opacity:.075;mix-blend-mode:multiply;animation:grain 1.1s steps(6) infinite}
+.grain svg{width:100%;height:100%}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+/* 비네팅: 화면 가장자리가 아주 조금 어두워짐 */
+.vignette{position:fixed;inset:0;z-index:79;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(17,19,18,.16) 100%)}
+
+/* 필름 리더 (3·2·1) — 첫 진입 시 */
+.leader{position:fixed;inset:0;z-index:100;background:#cfd0ce;display:grid;place-items:center;cursor:pointer;transition:opacity .8s var(--ease),visibility .8s}
+.leader.out{opacity:0;visibility:hidden}
+.leader svg{width:min(62vmin,440px);height:auto;overflow:visible}
+.leader .lc{fill:none;stroke:var(--ink);stroke-width:1}
+.leader .lc.thin{opacity:.35}
+.leader .sweep{fill:rgba(17,19,18,.10);stroke:none}
+.leader .num{font-family:var(--sans);font-weight:300;font-size:150px;fill:var(--ink);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+.leader .lt{font-family:var(--mono);font-size:8px;fill:var(--mute);letter-spacing:.12em}
+.leader .lt.g{fill:var(--green)}
+.leader .skip{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:10px;letter-spacing:.3em;color:var(--mute)}
+.leader .perf{position:absolute;top:0;bottom:0;width:22px;background:repeating-linear-gradient(to bottom,transparent 0 14px,rgba(17,19,18,.22) 14px 24px)}
+.leader .perf.l{left:18px}.leader .perf.r{right:18px}
+
+/* 이미지 placeholder — 회색 박스 대신 "NO SIGNAL" 해칭 슬레이트 */
+.ph.missing{background:#b2b4b2}
+.ph.missing::after{content:none}
+.ph .nosig{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.ph .nosig .hatch line{stroke:rgba(17,19,18,.13);stroke-width:1}
+.ph .nosig .x{stroke:rgba(17,19,18,.22);stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
+.ph .nosig-lab{position:absolute;left:10px;right:10px;bottom:8px;z-index:2;display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:9.5px;color:rgba(17,19,18,.6);pointer-events:none}
+.ph .nosig-lab b{font-weight:400;color:var(--green);letter-spacing:.14em}
+.ph .nosig-c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;font-family:var(--sans);font-size:10px;letter-spacing:.4em;color:rgba(17,19,18,.45);white-space:nowrap;pointer-events:none}
+.ph .nosig-c::before{content:"";display:inline-block;width:6px;height:6px;background:var(--green);margin-right:10px;vertical-align:1px;animation:blink 1.6s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* HERO — 2040 연도 롤 · 네온 플리커 · 실시간 시계 */
+.hero-meta .yr{position:relative}
+.hero-meta .yr .d{display:inline-block;min-width:.56em;text-align:center}
+body.entered .logo-v .rs::after{animation:neon 6s 1.4s infinite}
+@keyframes neon{0%,92%,100%{opacity:1}93%{opacity:.15}94%{opacity:1}96%{opacity:.3}97%{opacity:1}}
+.slate .live-dot{display:inline-block;width:5px;height:5px;background:var(--green);margin-right:6px;vertical-align:1px;animation:blink 1s steps(2) infinite}
+.scroll-hint{display:flex;flex-direction:column;align-items:center;gap:8px}
+.scroll-hint svg{width:9px;height:42px;overflow:visible}
+.scroll-hint svg line{stroke:var(--black);stroke-width:1}
+.scroll-hint svg .drop{stroke:var(--green);stroke-dasharray:10 42;animation:drop 1.8s var(--ease) infinite}
+@keyframes drop{from{stroke-dashoffset:10}to{stroke-dashoffset:-42}}
+/* 히어로 측면 눈금: 스크롤에 따라 움직이는 거리 표시 */
+.hero-scale{position:absolute;right:calc(var(--pad) * .6 - 4px);top:22%;bottom:30%;width:10px;z-index:3;opacity:0;transition:opacity .8s var(--ease) .6s}
+body.entered .hero-scale{opacity:.8}
+.hero-scale svg{width:100%;height:100%;overflow:visible}
+.hero-scale line{stroke:var(--black);stroke-width:1;vector-effect:non-scaling-stroke}
+
+/* 01 — 재개발 공지 테이프 (스크롤 속도 연동 marquee) */
+.tape{position:relative;margin:16vh calc(var(--pad) * -1) 0;height:64px;overflow:hidden;transform:rotate(-1.2deg);
+  border-top:var(--rule);border-bottom:var(--rule);background:rgba(210,211,209,.55)}
+.tape::before,.tape::after{content:"";position:absolute;left:0;right:0;height:8px;
+  background:repeating-linear-gradient(-45deg,var(--ink) 0 6px,transparent 6px 14px);opacity:.75}
+.tape::before{top:0}.tape::after{bottom:0}
+.tape .track{position:absolute;top:50%;left:0;display:flex;white-space:nowrap;transform:translateY(-50%);will-change:transform}
+.tape .track span{font-family:var(--sans);font-size:12px;letter-spacing:.34em;padding-right:2.4em;display:inline-flex;align-items:center;gap:2.4em}
+.tape .track span i{font-style:normal;font-family:var(--jp);letter-spacing:.3em}
+.tape .track span em{font-style:normal;color:var(--green)}
+
+/* 01 지도 보강 */
+.kmap .tokyo{fill:rgba(17,19,18,.05);stroke:none}
+.kmap .north path{fill:none;stroke:var(--ink);stroke-width:1}
+.kmap .north text,.kmap .scale text{font-family:var(--mono);font-size:6.5px;fill:var(--mute)}
+.kmap .scale line{stroke:var(--ink);stroke-width:1}
+.kmap .pulse{fill:none;stroke:var(--green);stroke-width:1;opacity:0}
+.kmap .pt.on .pulse{animation:pulse 1.4s var(--ease) infinite}
+@keyframes pulse{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(2.4)}}
+.kmap .pt .pulse{transform-box:fill-box;transform-origin:center}
+.kmap .scan{stroke:var(--green);stroke-width:1;opacity:.35}
+.kmap-read{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--mute);margin-top:6px}
+.kmap-read b{font-weight:400;color:var(--green)}
+
+/* 섹션 인덱스 스크램블 중 글자 */
+.idx .sc{color:var(--green)}
+
+/* 03 — RESIST 도장 · 카운터 셀 */
+.dogma{position:relative}
+.stamp{position:absolute;right:-6px;top:38px;width:62px;height:62px;pointer-events:none;opacity:0;transform:rotate(-14deg) scale(1.8);transition:opacity .25s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.stamp rect{fill:none;stroke:var(--green);stroke-width:1.6}
+.stamp text{font-family:var(--jp);font-weight:500;fill:var(--green);text-anchor:middle}
+.stamp .sm{font-family:var(--mono);font-size:6px;font-weight:400}
+.dogma.resisted .stamp{opacity:.85;transform:rotate(-14deg) scale(1)}
+.resist-count{display:flex;align-items:center;gap:10px}
+.resist-count .cells{display:flex;gap:3px}
+.resist-count .cells i{width:7px;height:7px;border:1px solid var(--mute);transition:background .3s,border-color .3s}
+.resist-count .cells i.on{background:var(--green);border-color:var(--green)}
+body.all-resisted #thread .live{stroke:var(--green)}
+body.all-resisted #thread .head-ring{animation:ring 1.6s infinite}
+@keyframes ring{50%{opacity:0}}
+.toast{position:fixed;left:50%;bottom:22px;z-index:70;transform:translate(-50%,24px);opacity:0;pointer-events:none;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;background:var(--ink);color:#d2d3d1;padding:8px 14px;transition:all .6s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast b{color:#8fc3ad;font-weight:400}
+.ev.now .coda{margin-top:18px;font-family:var(--mono);font-size:10px;color:var(--green);opacity:0;transition:opacity .8s}
+body.all-resisted .ev.now .coda{opacity:1}
+
+/* 04 — 눈금자 판독 바늘 */
+#ruler .needle{stroke:var(--green);stroke-width:1;opacity:1}
+#ruler .needle-t{fill:var(--green)}
+
+/* 키보드 단축 힌트 */
+.kbd{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;font-family:var(--mono);font-size:9.5px;color:var(--mute);opacity:0;transition:opacity .6s}
+body.entered:not([data-sec="hero"]) .kbd{opacity:.55}
+
+@media (max-width:820px){
+  .tape{height:52px}.tape .track span{font-size:10px}
+  .stamp{width:48px;height:48px;top:30px}
+  .kbd,.hero-scale{display:none}
+  .leader .perf{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .grain{animation:none} .leader{display:none} }
+</style>
+</head>
+
+<body class="is-intro" data-sec="hero">
+
+<!-- ============================================================
+     [UI] 고정 요소
+     ============================================================ -->
+<!-- [v3] 질감 레이어 -->
+<div class="grain" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.1 -.1"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- [v3] 필름 리더 — 클릭/키 입력 시 스킵 -->
+<div class="leader" id="leader" aria-hidden="true">
+  <span class="perf l"></span><span class="perf r"></span>
+  <svg viewBox="-120 -120 240 240">
+    <path class="sweep" id="sweep" d=""/>
+    <circle class="lc" r="100"/><circle class="lc thin" r="82"/>
+    <line class="lc thin" x1="-120" y1="0" x2="120" y2="0"/><line class="lc thin" x1="0" y1="-120" x2="0" y2="120"/>
+    <path class="lc" d="M-120 -120h14M-120 -120v14M120 -120h-14M120 -120v14M-120 120h14M-120 120v-14M120 120h-14M120 120v-14"/>
+    <text class="num" id="leaderNum" x="0" y="4">3</text>
+    <text class="lt" x="-120" y="-128">DOGMA RESIST · REEL 01</text>
+    <text class="lt g" x="120" y="-128" text-anchor="end" id="leaderTc">00:00:00:00</text>
+    <text class="lt" x="-120" y="136">35°48′N 139°43′E</text>
+    <text class="lt" x="120" y="136" text-anchor="end">KAWAGUCHI 2040</text>
+  </svg>
+  <span class="skip">CLICK TO SKIP</span>
+</div>
+
+<a class="brand-mini" href="#hero" data-nav>DOGMA RESIST</a>
+
+<nav class="nav" aria-label="chapters">
+  <a href="#hero" data-nav data-sec="hero" class="active">00</a>
+  <a href="#kawaguchi" data-nav data-sec="kawaguchi">01</a>
+  <a href="#entry" data-nav data-sec="entry">02</a>
+  <a href="#people" data-nav data-sec="people">03</a>
+  <a href="#timeline" data-nav data-sec="timeline">04</a>
+  <span class="nav-prog" aria-hidden="true"><i id="navProg"></i></span>
+</nav>
+
+<div class="resist-count" id="resistCount" aria-live="polite"><span class="cells" id="rcCells"><i></i><i></i><i></i><i></i><i></i><i></i></span><span>RESISTED <b id="rc">0</b> / 6</span></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="kbd" aria-hidden="true">[0–4] CHAPTER · [R] RESIST NEAREST</div>
+
+<!-- folio: 현재 챕터 표시 -->
+<div class="folio" aria-hidden="true">
+  <span class="win"><span id="folioA">00 — COVER</span></span>
+  <span class="jp" id="folioB">表紙</span>
+</div>
+
+<button class="sound" id="soundBtn" type="button" aria-pressed="false" aria-label="BGM 켜기/끄기">
+  <!-- SVG 파형: ON이면 [JS 04]가 진폭을 움직임, OFF면 평평한 선 -->
+  <svg viewBox="0 0 22 10" aria-hidden="true"><polyline id="wave" points="0,5 22,5"/></svg>
+  <span id="soundLabel">SOUND OFF</span>
+</button>
+<audio id="bgm" src="assets/audio/bgm.mp3" preload="auto" loop></audio>
+
+<!-- 01 사진용 커서 뷰파인더 -->
+<div class="finder" id="finder" aria-hidden="true">
+  <svg viewBox="0 0 40 40"><path d="M0 20H14M26 20H40M20 0V14M20 26V40"/><path d="M8 8h4M8 8v4M32 8h-4M32 8v4M8 32h4M8 32v-4M32 32h-4M32 32v-4"/></svg>
+  <span class="lab" id="finderLab">X 0.00 · Y 0.00</span>
+</div>
+
+<!-- 03 인물 sub-index -->
+<nav class="p-index" aria-label="people">
+  <a href="#p-mai" data-nav data-p="p-mai">秋山</a>
+  <a href="#p-natsume" data-nav data-p="p-natsume">黒木</a>
+  <a href="#p-nana" data-nav data-p="p-nana">石原</a>
+  <a href="#p-miu" data-nav data-p="p-miu">佐藤</a>
+  <a href="#p-kazuki" data-nav data-p="p-kazuki">西</a>
+  <a href="#p-azusa" data-nav data-p="p-azusa">世界橋</a>
+</nav>
+
+<main id="main" style="position:relative">
+
+<!-- THE THREAD: [JS 06]이 data-thread 지점들을 직각으로 연결해 path 생성 -->
+<svg id="thread" aria-hidden="true">
+  <path class="ghost" id="threadGhost"/>
+  <path class="live" id="threadLive"/>
+  <g id="knots"></g>
+  <rect class="head-ring" id="headRing" width="13" height="13"/>
+  <rect class="head" id="threadHead" width="5" height="5"/>
+</svg>
+
+<!-- ============================================================
+     ============================================================
+     PAGE 00 — HERO
+     ============================================================
+     ============================================================ -->
+<section id="hero" class="chapter" data-bg="#BFC1BF" data-folio="00 — COVER" data-jp="表紙">
+  <figure class="hero-bg ph" id="heroBg" data-file="assets/images/hero-cast.png">
+    <img src="assets/images/hero-cast.png" alt="DOGMA RESIST 출연진">
+  </figure>
+
+  <!-- 시네마 프레임 SVG: 2.39:1 프레임라인 + 레지스트레이션 마크 -->
+  <div class="frame" aria-hidden="true">
+    <svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+      <path d="M0 40V0H40 M960 0H1000V40 M1000 560V600H960 M40 600H0V560"/>
+      <path class="draw" pathLength="1" d="M0 70H1000"/>
+      <path class="draw" pathLength="1" d="M1000 530H0"/>
+      <line x1="500" y1="-8" x2="500" y2="8"/><line x1="500" y1="592" x2="500" y2="608"/>
+      <line x1="-8" y1="300" x2="8" y2="300"/><line x1="992" y1="300" x2="1008" y2="300"/>
+    </svg>
+  </div>
+
+  <div class="slate">
+    <span class="mono">SC. 00 / COVER</span>
+    <span class="mono">35°48′N 139°43′E · 川口市</span>
+    <span class="mono">TC <span id="tc">00:00:00:00</span></span>
+    <span class="mono"><span class="live-dot"></span><span id="clock40">2040.00.00 — 00:00:00 JST</span></span>
+  </div>
+
+  <h1 class="logo-v" aria-label="DOGMA RESIST">
+    <span>DOGMA <span class="rs">RESIST</span></span>
+    <span class="jp-sub">ドグマ・レジスト</span>
+  </h1>
+
+  <div class="hero-meta">
+    <div class="yr" id="heroYear">2040</div>
+    <div class="loc">KAWAGUCHI, SAITAMA</div>
+    <div class="tag">끝난 도시에서, 각자의 교리를 지키는 사람들.</div>
+  </div>
+
+  <!-- THREAD 시작점 -->
+  <div class="hero-rule" data-thread="0,50%" aria-hidden="true"></div>
+
+  <button class="enter" id="enterBtn" type="button">ENTER
+    <svg viewBox="0 0 60 9" aria-hidden="true"><path d="M0 4.5 H40 M40 4.5 L40 4.5 L40 4.5"/></svg>
+  </button>
+  <div class="scroll-hint sans" aria-hidden="true"><span>SCROLL</span><svg viewBox="0 0 9 42"><line x1="4.5" y1="0" x2="4.5" y2="42" style="opacity:.25"/><line class="drop" x1="4.5" y1="0" x2="4.5" y2="42"/></svg></div>
+  <div class="hero-scale" aria-hidden="true"><svg id="heroScale" preserveAspectRatio="none"></svg></div>
+</section>
+<!-- /PAGE 00 -->
+
+
+<!-- ============================================================
+     ============================================================
+     PAGE 01 — KAWAGUCHI
+     ============================================================
+     ============================================================ -->
+<section id="kawaguchi" class="chapter" data-bg="#D2D3D1" data-folio="01 — KAWAGUCHI" data-jp="川口">
+  <header class="head">
+    <div class="idx rv"><b>01</b> KAWAGUCHI</div>
+    <h2 class="rv-mask">강 하나를 사이에 둔, 도쿄가 아닌 도시<span class="jp">川口 · 埼玉県</span></h2>
+  </header>
+  <!-- THREAD: 헤더 아래 가로 rule -->
+  <div data-thread="0,0|v" style="height:1px"></div>
+  <div data-thread="100%,0|h" style="height:1px"></div>
+
+  <div class="k-grid">
+    <div class="k-a k-shot" data-loc="redev">
+      <figure class="ph rv-clip" data-file="assets/images/city/city-redevelopment.png">
+        <img src="assets/images/city/city-redevelopment.png" alt="재개발 구역" loading="lazy">
+      </figure>
+      <div class="k-cap"><span><b>A</b> 재개발 구역 / 再開発区域</span><span>FIG.01</span></div>
+    </div>
+
+    <div class="k-side">
+      <div class="k-prose rv">
+        <p>철거 예정 표지가 붙은 건물 1층에서 아직 간판 불이 켜진다. 2040년의 카와구치는 새것과 끝난 것이 같은 블록 안에 서 있는 도시다.</p>
+      </div>
+      <!-- 아라카와 schematic map: 곡선 없이 직선 segment만 -->
+      <div class="kmap rv">
+        <svg viewBox="0 0 200 150" role="img" aria-label="카와구치 개략도">
+          <text class="lbl" x="0" y="8">SCHEMATIC · NOT TO SCALE</text>
+          <polygon class="tokyo" points="0,116 40,108 80,124 130,112 200,128 200,150 0,150"/>
+          <g class="north" transform="translate(186,14)"><path d="M0 10 L0 -6 M-3 -2 L0 -6 L3 -2"/><text x="-2.5" y="18">N</text></g>
+          <g class="scale" transform="translate(0,140)"><line x1="0" y1="0" x2="40" y2="0"/><line x1="0" y1="-2" x2="0" y2="2"/><line x1="20" y1="-1.5" x2="20" y2="1.5"/><line x1="40" y1="-2" x2="40" y2="2"/><text x="0" y="8">0</text><text x="34" y="8">1km</text></g>
+          <line class="scan" id="kscan" x1="0" y1="14" x2="200" y2="14"/>
+          <polyline class="rail" points="20,20 60,40 120,40 180,70"/>
+          <polyline class="river2" points="0,104 40,96 80,112 130,100 200,116"/>
+          <polyline class="river" points="0,110 40,102 80,118 130,106 200,122"/>
+          <text class="lbl" x="150" y="140">荒川 ARAKAWA</text>
+          <text class="lbl" x="150" y="146" style="opacity:.6">↓ TOKYO</text>
+          <g class="pt" data-pt="redev"><rect class="pulse" x="92" y="55" width="6" height="6"/><line x1="95" y1="58" x2="95" y2="18"/><rect x="92" y="55" width="6" height="6"/><text x="101" y="62">A</text></g>
+          <g class="pt" data-pt="night"><rect class="pulse" x="125" y="45" width="6" height="6"/><line x1="128" y1="48" x2="168" y2="48"/><rect x="125" y="45" width="6" height="6"/><text x="134" y="44">B</text></g>
+          <g class="pt" data-pt="arakawa"><rect class="pulse" x="63" y="104" width="6" height="6"/><line x1="66" y1="113" x2="66" y2="140"/><rect x="63" y="104" width="6" height="6"/><text x="72" y="103">C</text></g>
+          <g class="pt" data-pt="industrial"><rect class="pulse" x="27" y="73" width="6" height="6"/><line x1="30" y1="76" x2="0" y2="76"/><rect x="27" y="73" width="6" height="6"/><text x="36" y="80">D</text></g>
+        </svg>
+        <div class="kmap-read"><span id="kmapRead">— STANDBY</span><b id="kmapCoord">35.8000 / 139.7200</b></div>
+      </div>
+    </div>
+
+    <div class="k-b k-shot" data-loc="night">
+      <figure class="ph rv-clip" data-file="assets/images/city/city-night.png">
+        <img src="assets/images/city/city-night.png" alt="카와구치의 밤" loading="lazy">
+      </figure>
+      <div class="k-cap"><span><b>B</b> 유흥가 / 歓楽街</span><span>FIG.02</span></div>
+    </div>
+
+    <div class="k-c k-shot" data-loc="arakawa">
+      <figure class="ph rv-clip" data-file="assets/images/city/city-arakawa.png">
+        <img src="assets/images/city/city-arakawa.png" alt="아라카와" loading="lazy">
+      </figure>
+      <div class="k-cap"><span><b>C</b> 아라카와 강변 / 荒川</span><span>FIG.03</span></div>
+    </div>
+
+    <div class="k-wide rv">
+      <p>아라카와를 건너면 도쿄다. 그 짧은 거리 때문에 이 도시는 늘 무언가의 바깥이었다. 주물 공장이 있던 자리엔 물류창고가, 오래된 클럽이 있던 골목엔 브랜드 쇼룸이 들어선다.</p>
+      <p>사람들은 떠나거나, 남거나, 남은 척을 한다. 누구도 큰 소리로 말하지 않지만 모두가 알고 있다. 이 도시는 한 번 끝났고, 지금은 다른 이름으로 다시 시작되는 중이라는 것을.</p>
+    </div>
+
+    <div class="k-d k-shot" data-loc="industrial">
+      <figure class="ph rv-clip" data-file="assets/images/city/city-industrial.png">
+        <img src="assets/images/city/city-industrial.png" alt="공업지대" loading="lazy">
+      </figure>
+      <div class="k-cap"><span><b>D</b> 공업지대 / 工業地帯</span><span>FIG.04</span></div>
+    </div>
+  </div>
+
+  <!-- THREAD: 긴 가로 rule → 화면 중앙에서 세로로 꺾임 -->
+  <!-- [v3] 재개발 공지 테이프 -->
+  <div class="tape" aria-hidden="true"><div class="track" id="tapeTrack"></div></div>
+
+  <div class="k-end" data-thread="0,0|v">
+    <span data-thread="50%,0|h" style="position:absolute;left:0;right:0;top:0"></span>
+    <a class="next" href="#entry" data-nav>NEXT CHAPTER — 02 →</a>
+  </div>
+</section>
+<!-- /PAGE 01 -->
+
+
+<!-- ============================================================
+     ============================================================
+     PAGE 02 — ENTRY POINT
+     ============================================================
+     ============================================================ -->
+<section id="entry" class="chapter" data-bg="#C5C6C4" data-folio="02 — ENTRY POINT" data-jp="入口">
+  <div class="e-top">
+    <div class="idx rv"><b>02</b> ENTRY POINT</div>
+    <h2 class="rv-mask">두 개의 입구<span class="jp">入口</span></h2>
+  </div>
+
+  <!-- THREAD가 spread 중앙을 세로로 관통 = divider -->
+  <div class="spread" data-thread="50%,100%|v">
+    <a class="route" href="#p-kazuki" data-nav>
+      <svg class="ptr" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 4.5H100" vector-effect="non-scaling-stroke"/></svg>
+      <div class="letter rv">A</div>
+      <figure class="img ph rv-clip" data-file="assets/images/entry/entry-todogumi.png">
+        <img src="assets/images/entry/entry-todogumi.png" alt="토도구미" loading="lazy">
+      </figure>
+      <h3>조직으로부터 — 토도구미<span class="jp">藤堂組</span></h3>
+      <p>고베에서 온 대형 조직은 관동의 땅과 회사와 사람을 조정한다. 질서는 바깥에서 들어오고, 도시는 그 질서의 장부 위에서 다시 계산된다.</p>
+      <div class="meta"><span class="mono">KOBE → KANTO</span><span class="go">ROUTE A →</span></div>
+    </a>
+    <a class="route" href="#p-mai" data-nav>
+      <svg class="ptr" viewBox="0 0 100 9" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 4.5H100" vector-effect="non-scaling-stroke"/></svg>
+      <div class="letter rv">B</div>
+      <figure class="img ph rv-clip" data-file="assets/images/entry/entry-kawaguchi.png">
+        <img src="assets/images/entry/entry-kawaguchi.png" alt="카와구치 거리" loading="lazy">
+      </figure>
+      <h3>거리로부터 — 카와구치<span class="jp">川口</span></h3>
+      <p>클럽, 단칸방, 새 상업시설의 촬영장. 이 도시에 남은 사람들의 생활은 각자의 방식으로 끝을 미루고 있다.</p>
+      <div class="meta"><span class="mono">STREET LEVEL</span><span class="go">ROUTE B →</span></div>
+    </a>
+  </div>
+
+  <div class="e-end">
+    <a class="next" href="#people" data-nav>NEXT CHAPTER — 03 →</a>
+  </div>
+</section>
+<!-- /PAGE 02 -->
+
+
+<!-- ============================================================
+     ============================================================
+     PAGE 03 — PEOPLE / DOGMA
+     ============================================================
+     ============================================================ -->
+<section id="people" class="chapter" data-bg="#B9BBB9" data-folio="03 — PEOPLE / DOGMA" data-jp="人物 · 教義">
+  <!-- THREAD: 02의 세로선이 꺾여 이름 baseline으로 -->
+  <div class="p-base" data-thread="0,0|v" aria-hidden="true">
+    <span data-thread="100%,0|h" style="display:block;height:1px"></span>
+  </div>
+  <header class="p-head">
+    <div class="idx rv"><b>03</b> PEOPLE</div>
+    <h2 class="rv-mask">PEOPLE<span class="jp">人物 · 教義</span></h2>
+    <p class="how rv">DOGMA로부터 벗어나고 싶다는 마음이 <span class="sans" style="font-size:10px">RESIST</span>를 누르면, 그 문장에 선이 그어집니다.</p>
+  </header>
+
+  <!-- 03-1 마이 -->
+  <article class="person p-mai" id="p-mai">
+    <span class="deco-jp" data-drift aria-hidden="true">舞</span>
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-mai.png">
+      <img src="assets/images/cast/cast-mai.png" alt="아키야마 마이" loading="lazy">
+    </figure>
+    <div class="txt rv">
+      <h3 class="name">아키야마 마이<small>秋山 舞</small></h3>
+      <div class="role">49 · 클럽 사장 / 유흥가 중간조정자</div>
+      <div class="vig">
+        <p>카와구치 유흥가에서 오래 살아남은 사람. 재개발 구역에 걸린 클럽의 간판은 오늘 밤에도 켜진다.</p>
+        <p>웬만한 문제는 웃으며 말로 끝내고, 자기 일은 농담처럼 넘긴다. 끝났다는 사실을 알아도, 먼저 손을 놓는 데에는 여전히 익숙하지 않다.</p>
+      </div>
+      <div class="dogma"><div class="bar"><span class="sans">DOGMA 01</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+        <span class="q">진심은 말하지 않는 편이 안전하다</span><div class="after">— 01 RESISTED</div></div>
+    </div>
+  </article>
+
+  <!-- 03-2 나츠메 -->
+  <article class="person p-natsume" id="p-natsume">
+    <div class="num rv" aria-hidden="true">02</div>
+    <div class="txt rv">
+      <h3 class="name">쿠로키 나츠메<small>黒木 夏芽</small></h3>
+      <div class="role">32 · 프리랜서 해결사 / 심부름꾼</div>
+      <div class="vig">
+        <p>퇴거 연락, 잠적자 추적, 물건 회수. 남들이 꺼리는 잡일이 소개를 타고 그녀에게 온다.</p>
+        <p>2026년, 폐교 직전의 키요미즈 고교에서 그녀는 문제학생이었다. MMA 링에도 올랐었다. 지금은 싸울 수 있다는 사실보다, 싸운 뒤가 얼마나 귀찮은지를 먼저 계산한다.</p>
+      </div>
+      <div class="dogma"><div class="bar"><span class="sans">DOGMA 02</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+        <span class="q">기대하지 않으면 버려질 일도 없다</span><div class="after">— 02 RESISTED</div></div>
+    </div>
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-natsume.png">
+      <img src="assets/images/cast/cast-natsume.png" alt="쿠로키 나츠메" loading="lazy">
+    </figure>
+  </article>
+
+  <!-- 03-3 나나 -->
+  <article class="person p-nana" id="p-nana">
+    <span class="deco-jp" data-drift aria-hidden="true">菜々</span>
+    <div class="name-out rv">
+      <h3 class="name">이시하라 나나<small>石原 菜々</small></h3>
+      <div class="role">35 · 라이프스타일 인플루언서 / 브랜드 모델</div>
+    </div>
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-nana.png">
+      <img src="assets/images/cast/cast-nana.png" alt="이시하라 나나" loading="lazy">
+    </figure>
+    <div class="txt rv">
+      <div class="vig">
+        <p>새 상업시설과 브랜드의 얼굴. 카메라 앞에서 필요한 모습을 정확하게 안다.</p>
+        <p>사적인 감정과 내려야 할 선택을 구분한다. 새 도시를 홍보하면서, 자신이 알던 오래된 도시가 사라지는 것도 함께 본다.</p>
+      </div>
+      <div class="dogma"><div class="bar"><span class="sans">DOGMA 03</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+        <span class="q">감정과 선택은 분리할 수 있다</span><div class="after">— 03 RESISTED</div></div>
+    </div>
+  </article>
+
+  <!-- 03-4 미우 -->
+  <article class="person p-miu" id="p-miu">
+    <div class="txt rv">
+      <h3 class="name">사토 미우<small>佐藤 美羽</small></h3>
+      <div class="role">29 · 무직에 가까운 단기노동자</div>
+      <div class="vig">
+        <p>행사 스태프, 매장 대타, 중고거래. 돈은 그때그때 번다. 싸고 오래된 방과, 밤늦게까지 머물 수 있는 장소를 전전한다.</p>
+        <p>자기파괴조차 자기 선택이어야 한다고 믿는다. 그런데 다른 누군가가 같은 방식으로 망가지는 건, 쉽게 지나치지 못한다.</p>
+      </div>
+      <div class="dogma"><div class="bar"><span class="sans">DOGMA 04</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+        <span class="q">내 몸과 내 인생은 나만 망칠 수 있다</span><div class="after">— 04 RESISTED</div></div>
+    </div>
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-miu.png">
+      <img src="assets/images/cast/cast-miu.png" alt="사토 미우" loading="lazy">
+    </figure>
+  </article>
+
+  <!-- 03-5 카즈키 -->
+  <article class="person p-kazuki" id="p-kazuki">
+    <div class="vjp rv" aria-hidden="true">西 一希<small>藤堂組</small></div>
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-kazuki.png">
+      <img src="assets/images/cast/cast-kazuki.png" alt="니시 카즈키" loading="lazy">
+    </figure>
+    <div class="txt rv">
+      <h3 class="name">니시 카즈키<small>西 一希</small></h3>
+      <div class="role">39 · 藤堂組 차기보스 / 관동 실무책임자</div>
+      <div class="vig">
+        <p>고베 기반 대형 조직 토도구미의 후계자. 관동에서 토지와 계열회사, 업자와 조직원 사이의 문제를 조정한다.</p>
+        <p>공식석상에서는 머리를 넘기고 정장을 입는다. 사적인 자리에서는 자신의 배경을 최대한 감춘다. 강하지만, 충돌 자체를 좋아하지 않는다.</p>
+      </div>
+      <div class="dogma"><div class="bar"><span class="sans">DOGMA 05</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+        <span class="q">내 배경을 알면 사람은 결국 나를 다르게 본다</span><div class="after">— 05 RESISTED</div></div>
+    </div>
+  </article>
+
+  <!-- 03-6 아즈사 -->
+  <article class="person p-azusa" id="p-azusa">
+    <figure class="img ph rv-clip" data-crop data-file="assets/images/cast/cast-azusa.png">
+      <img src="assets/images/cast/cast-azusa.png" alt="세카이바시 아즈사" loading="lazy" style="object-position:center 25%">
+    </figure>
+    <div class="txt">
+      <div class="left rv">
+        <h3 class="name">세카이바시 아즈사<small>世界橋 梓</small></h3>
+        <div class="role">41 · 브로커형 사기꾼</div>
+      </div>
+      <div class="right rv">
+        <div class="vig">
+          <p>명의, 채권, 재개발 보상금, 유령법인. 서류와 제도 사이의 틈에서 돈을 만든다. 사람에겐 별 관심이 없지만, 필요할 땐 믿기 어려울 만큼 사교적이다.</p>
+          <p>거짓말은 방어이자 업무도구. 가까운 사람일수록, 거짓말이 줄어든다.</p>
+        </div>
+        <div class="dogma"><div class="bar"><span class="sans">DOGMA 06</span><button class="resist-btn" type="button" aria-pressed="false">RESIST</button></div>
+          <span class="q">진실은 필요할 때만 말하면 된다</span><div class="after">— 06 RESISTED</div></div>
+      </div>
+    </div>
+  </article>
+
+  <!-- THREAD: 마지막 thin rule → 30% 지점에서 TIMELINE rail로 -->
+  <div class="p-end">
+    <span data-thread="100%,0|v" style="position:absolute;left:var(--pad);right:var(--pad);top:0"></span>
+    <a class="next" href="#timeline" data-nav>NEXT CHAPTER — 04 →</a>
+  </div>
+</section>
+<!-- /PAGE 03 -->
+
+
+<!-- ============================================================
+     ============================================================
+     PAGE 04 — TIMELINE   (END/FIN 없음 · rail은 화면 밖으로 계속)
+     ============================================================
+     ============================================================ -->
+<section id="timeline" class="chapter" data-bg="#AEB0AE" data-folio="04 — TIMELINE" data-jp="年表">
+  <header class="t-head" data-thread="30%,0|h" data-thread-m="0,0|h">
+    <div class="idx rv"><b>04</b> TIMELINE</div>
+    <h2 class="rv-mask">CHRONOLOGY<span class="jp">年表</span></h2>
+  </header>
+
+  <div class="t-clock" aria-hidden="true"><div>ARCHIVE READING<b id="tYear">—</b></div></div>
+
+  <div class="rail" id="rail">
+    <svg id="ruler" aria-hidden="true"></svg>
+
+    <div class="ev rv" data-year="—">
+      <div class="yr">—</div>
+      <div class="body">
+        <div><h3>토도구미, 관동으로<span class="jp">藤堂組 · 関東進出</span></h3>
+          <p>고베 기반의 대형 조직 토도구미가 관동의 토지와 계열회사를 통해 영향력을 넓히기 시작한다.</p></div>
+        <div><button class="arc-btn" type="button" data-cap="ARCHIVE 01 · 藤堂組">
+          <figure class="arc ph" data-file="timeline-todogumi.png"><img src="assets/images/timeline/timeline-todogumi.png" alt="" loading="lazy"></figure></button>
+          <div class="k-cap"><span>ARCHIVE 01</span></div></div>
+      </div>
+    </div>
+
+    <div class="ev rv" data-year="2026">
+      <div class="yr">2026</div>
+      <div class="body">
+        <div><h3>키요미즈 고교 폐교<span class="jp">清水高校 · 閉校</span></h3>
+          <p>지역의 오래된 고등학교가 문을 닫는다. 마지막 학년의 문제학생 중 한 명이 쿠로키 나츠메였다.</p></div>
+        <div><button class="arc-btn" type="button" data-cap="ARCHIVE 02 · 清水高校">
+          <figure class="arc ph" data-file="timeline-kiyomizu.png"><img src="assets/images/timeline/timeline-kiyomizu.png" alt="" loading="lazy"></figure></button>
+          <div class="k-cap"><span>ARCHIVE 02</span></div></div>
+      </div>
+    </div>
+
+    <div class="ev rv" data-year="—">
+      <div class="yr">—</div>
+      <div class="body">
+        <div><h3>재개발 구역 지정<span class="jp">再開発区域</span></h3>
+          <p>유흥가와 공업지대 일부가 재개발 구역으로 묶인다. 보상금과 명의, 퇴거를 둘러싼 틈이 생긴다.</p></div>
+        <div><button class="arc-btn" type="button" data-cap="ARCHIVE 03 · 再開発">
+          <figure class="arc ph" data-file="timeline-redevelopment.png"><img src="assets/images/timeline/timeline-redevelopment.png" alt="" loading="lazy"></figure></button>
+          <div class="k-cap"><span>ARCHIVE 03</span></div></div>
+      </div>
+    </div>
+
+    <div class="ev now rv" data-year="2040 NOW">
+      <div class="yr">2040<br><span class="sans" style="font-size:12px;letter-spacing:.3em">NOW</span></div>
+      <div class="body">
+        <div><h3>카와구치, 지금<span class="jp">現在</span></h3>
+          <p>새 상업시설이 문을 열고, 오래된 클럽은 아직 영업 중이다. 여섯 사람은 각자의 교리를 붙든 채 같은 도시에 서 있다.</p><div class="coda">// 6 / 6 DOGMA RESISTED — 교리는 끝났고, 도시는 계속된다.</div></div>
+        <div><button class="arc-btn" type="button" data-cap="ARCHIVE 04 · NOW">
+          <figure class="arc ph" data-file="timeline-now.png"><img src="assets/images/timeline/timeline-now.png" alt="" loading="lazy"></figure></button>
+          <div class="k-cap"><span>ARCHIVE 04</span></div></div>
+      </div>
+    </div>
+    <!-- THREAD 종점: 문서 끝 바깥까지 연장 ([JS 06] EXTEND) -->
+    <div data-thread="30%,100%|v" data-thread-m="0,100%|v" data-extend style="height:1px"></div>
+  </div>
+</section>
+<!-- /PAGE 04 -->
+</main>
+
+<!-- archival lightbox -->
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="archive">
+  <button class="x" id="lbX" type="button">CLOSE · ESC</button>
+  <figure class="ph" id="lbFig"><img id="lbImg" alt=""></figure>
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<script>
+(function(){
+var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+var isMobile = function(){ return innerWidth <= 820; };
+var $ = function(s,c){ return (c||document).querySelector(s); };
+var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySelectorAll(s)); };
+
+/* ============================================================
+   [JS 01] 이미지 placeholder
+   ============================================================ */
+function watch(img){
+  var fig = img.closest('.ph'); if(!fig) return;
+  var fail = function(){ fig.classList.add('missing'); };
+  if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) fail();
+  img.addEventListener('error', fail);
+  img.addEventListener('load', function(){ fig.classList.remove('missing'); });
+}
+$$('.ph img').forEach(watch);
+
+/* ============================================================
+   [JS 02] BGM — 단일 instance / 없으면 조용히 비활성
+   ============================================================ */
+var bgm = $('#bgm'), soundBtn = $('#soundBtn'), soundLabel = $('#soundLabel');
+var audioOK = true, VOLUME = 0.35;
+bgm.loop = true; bgm.volume = VOLUME;
+bgm.addEventListener('error', function(){ audioOK = false; soundBtn.hidden = true; });
+function setSoundUI(on){ soundBtn.classList.toggle('on',on); soundBtn.setAttribute('aria-pressed',on);
+  soundLabel.textContent = on ? 'SOUND ON' : 'SOUND OFF'; }
+function playBGM(){
+  if(!audioOK) return;
+  try{ var p = bgm.play();
+    if(p && p.then) p.then(function(){ setSoundUI(true); soundBtn.classList.add('ready'); })
+      .catch(function(){ if(bgm.error) soundBtn.hidden = true; else { setSoundUI(false); soundBtn.classList.add('ready'); } });
+  }catch(e){ soundBtn.hidden = true; }
+}
+soundBtn.addEventListener('click', function(){
+  if(!audioOK) return;
+  if(bgm.paused) playBGM(); else { bgm.pause(); setSoundUI(false); }
+});
+
+/* ============================================================
+   [JS 03] 크롭마크 SVG 주입 (data-crop 이미지)
+   ============================================================ */
+$$('[data-crop]').forEach(function(fig){
+  var ns='http://www.w3.org/2000/svg', s=document.createElementNS(ns,'svg');
+  s.setAttribute('class','crop'); s.setAttribute('viewBox','0 0 100 100'); s.setAttribute('preserveAspectRatio','none');
+  var p=document.createElementNS(ns,'path');
+  p.setAttribute('d','M0 6V0H6 M94 0H100V6 M100 94V100H94 M6 100H0V94');
+  s.appendChild(p); fig.appendChild(s);
+});
+
+/* ============================================================
+   [JS 04] 사운드 SVG 파형 (ON일 때만 진폭 움직임)
+   ============================================================ */
+var wave = $('#wave'), t0 = performance.now();
+function drawWave(now){
+  var on = !bgm.paused && !reduce, pts=[];
+  for(var x=0;x<=22;x+=2){
+    var a = on ? Math.sin((now-t0)/180 + x*.7)*Math.sin(x/22*Math.PI)*4 : 0;
+    pts.push(x+','+(5+a).toFixed(2));
+  }
+  wave.setAttribute('points', pts.join(' '));
+}
+
+/* ============================================================
+   [JS 05] SITE ENTRY + 타임코드
+   ============================================================ */
+var tc = $('#tc'), entered=false, tStart=0;
+$('#enterBtn').addEventListener('click', function(){
+  playBGM();
+  document.body.classList.remove('is-intro');
+  document.body.classList.add('entered');
+  entered = true; tStart = performance.now();
+  setTimeout(buildThread, 900);   /* HERO 재배치 후 선 재계산 */
+});
+function pad2(n){ return (n<10?'0':'')+n; }
+function drawTC(now){
+  if(!entered) return;
+  var sec = (!bgm.paused && bgm.currentTime) ? bgm.currentTime : (now - tStart)/1000;
+  var f = Math.floor((sec%1)*24), s = Math.floor(sec)%60, m = Math.floor(sec/60)%60, h=Math.floor(sec/3600);
+  tc.textContent = pad2(h)+':'+pad2(m)+':'+pad2(s)+':'+pad2(f);
+}
+
+/* ============================================================
+   [JS 06] THE THREAD — 직각 polyline 생성 + 스크롤 드로잉
+   data-thread="x,y|dir"  x,y = 요소 박스 기준 (px 또는 %)
+   dir = h : 가로 먼저 이동 후 세로 / v : 세로 먼저 이동 후 가로
+   data-thread-m = 모바일 전용 값
+   ============================================================ */
+var main = $('#main'), svg = $('#thread'), ghost=$('#threadGhost'), live=$('#threadLive'),
+    head=$('#threadHead'), ring=$('#headRing'), knotsG=$('#knots');
+var segs=[], total=0, verts=[];
+function val(v,size){ v=v.trim(); return v.slice(-1)==='%' ? parseFloat(v)/100*size : parseFloat(v)||0; }
+function buildThread(){
+  var mr = main.getBoundingClientRect(), pts=[];
+  $$('[data-thread]').forEach(function(el){
+    var spec = (isMobile() && el.dataset.threadM) || el.dataset.thread;
+    var parts = spec.split('|'), xy = parts[0].split(','), r = el.getBoundingClientRect();
+    pts.push({x: r.left - mr.left + val(xy[0], r.width), y: r.top - mr.top + val(xy[1], r.height),
+              dir: parts[1]||'h', ext: el.hasAttribute('data-extend')});
+  });
+  if(!pts.length) return;
+  verts=[{x:pts[0].x,y:pts[0].y}];
+  for(var i=1;i<pts.length;i++){
+    var a=verts[verts.length-1], b=pts[i];
+    if(b.dir==='v'){ verts.push({x:a.x,y:b.y}); } else { verts.push({x:b.x,y:a.y}); }
+    verts.push({x:b.x,y:b.y});
+    if(b.ext) verts.push({x:b.x,y:main.scrollHeight + innerHeight}); /* 화면 밖까지 */
+  }
+  /* 중복점 제거 */
+  verts = verts.filter(function(p,i){ return i===0 || p.x!==verts[i-1].x || p.y!==verts[i-1].y; });
+  var d='M'+verts.map(function(p){return p.x.toFixed(1)+' '+p.y.toFixed(1);}).join(' L');
+  ghost.setAttribute('d',d); live.setAttribute('d',d);
+  svg.setAttribute('height', main.scrollHeight); svg.style.height = main.scrollHeight+'px';
+  segs=[]; total=0;
+  for(var j=1;j<verts.length;j++){
+    var L=Math.abs(verts[j].x-verts[j-1].x)+Math.abs(verts[j].y-verts[j-1].y);
+    segs.push({a:verts[j-1],b:verts[j],s:total,L:L}); total+=L;
+  }
+  live.style.strokeDasharray = total; 
+  /* 꺾이는 지점(knot) = RESIST 지점: 작은 사각형 */
+  knotsG.innerHTML='';
+  verts.slice(1,-1).forEach(function(p){
+    var r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',p.x-2.5); r.setAttribute('y',p.y-2.5); r.setAttribute('width',5); r.setAttribute('height',5);
+    r.setAttribute('class','knot'); r.dataset.y=p.y; knotsG.appendChild(r);
+  });
+  updateThread();
+}
+function updateThread(){
+  if(!segs.length) return;
+  var target = scrollY + innerHeight*.62 - (main.getBoundingClientRect().top+scrollY);
+  var len=0, hx=verts[0].x, hy=verts[0].y;
+  for(var i=0;i<segs.length;i++){
+    var s=segs[i];
+    if(s.a.y===s.b.y){ /* 가로 */
+      if(s.a.y<=target){ len=s.s+s.L; hx=s.b.x; hy=s.b.y; } else break;
+    } else { /* 세로 */
+      if(s.b.y<=target){ len=s.s+s.L; hx=s.b.x; hy=s.b.y; }
+      else { var k=Math.max(0,target-s.a.y); len=s.s+k; hx=s.a.x; hy=s.a.y+k; break; }
+    }
+  }
+  live.style.strokeDashoffset = (total-len);
+  head.setAttribute('x',hx-2.5); head.setAttribute('y',hy-2.5);
+  ring.setAttribute('x',hx-6.5); ring.setAttribute('y',hy-6.5);
+  $$('.knot',knotsG).forEach(function(k){ k.classList.toggle('on', +k.dataset.y < hy-1 || (+k.dataset.y<=hy+1 && len>0)); });
+}
+
+/* ============================================================
+   [JS 07] nav · folio · 배경 gray · 챕터 내부 진행률
+   ============================================================ */
+var sections=$$('.chapter'), navLinks=$$('.nav a'), folioA=$('#folioA'), folioB=$('#folioB'), navProg=$('#navProg'), curId='';
+function swapFolio(sec){
+  folioA.style.transform='translateY(-100%)';
+  setTimeout(function(){ folioA.textContent=sec.dataset.folio; folioB.textContent=sec.dataset.jp;
+    folioA.style.transition='none'; folioA.style.transform='translateY(100%)';
+    requestAnimationFrame(function(){ folioA.style.transition=''; folioA.style.transform='translateY(0)'; }); }, reduce?0:300);
+}
+function updateSections(){
+  var mid=innerHeight*.5, cur=sections[0];
+  sections.forEach(function(s){ if(s.getBoundingClientRect().top<=mid) cur=s; });
+  if(cur.id!==curId){
+    curId=cur.id; document.body.dataset.sec=cur.id;
+    document.body.style.backgroundColor=cur.dataset.bg;
+    navLinks.forEach(function(a){ a.classList.toggle('active', a.dataset.sec===cur.id); });
+    swapFolio(cur);
+  }
+  var r=cur.getBoundingClientRect(), p=Math.min(1,Math.max(0,(mid-r.top)/r.height));
+  navProg.style.width=(p*100)+'%';
+}
+
+/* ============================================================
+   [JS 08] 01 KAWAGUCHI — 뷰파인더 커서 + 지도 연동
+   ============================================================ */
+var finder=$('#finder'), flab=$('#finderLab');
+$$('.k-shot').forEach(function(el){
+  var fig=$('.ph',el), pt=$('.kmap .pt[data-pt="'+el.dataset.loc+'"]');
+  el.addEventListener('mouseenter',function(){ if(pt) pt.classList.add('on'); if(!isMobile()) finder.classList.add('on'); });
+  el.addEventListener('mouseleave',function(){ if(pt) pt.classList.remove('on'); finder.classList.remove('on'); });
+  el.addEventListener('mousemove',function(e){
+    var r=fig.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+    finder.style.transform='translate('+e.clientX+'px,'+e.clientY+'px)';
+    flab.textContent = 'FIG.'+el.querySelector('.k-cap span:last-child').textContent.slice(4)+'  X '+x.toFixed(2)+' · Y '+y.toFixed(2);
+  });
+});
+
+/* ============================================================
+   [JS 09] 03 DOGMA RESIST — SVG 취소선
+   ============================================================ */
+var rc=$('#rc'), rcBox=$('#resistCount');
+$$('.dogma').forEach(function(dg){
+  var q=$('.q',dg), ns='http://www.w3.org/2000/svg', s=document.createElementNS(ns,'svg'), p=document.createElementNS(ns,'path');
+  s.setAttribute('viewBox','0 0 100 10'); s.setAttribute('preserveAspectRatio','none');
+  /* 직선으로 긋다가 끝에서 위로 꺾임 = 저항 */
+  p.setAttribute('d','M0 6 H94 L100 1'); p.setAttribute('pathLength','1'); p.setAttribute('vector-effect','non-scaling-stroke');
+  s.appendChild(p); q.appendChild(s);
+  $('.resist-btn',dg).addEventListener('click',function(){
+    var on=dg.classList.toggle('resisted'); this.setAttribute('aria-pressed',on);
+    this.textContent = on ? 'RESISTED' : 'RESIST';
+    var n=$$('.dogma.resisted').length; rc.textContent=n; rcBox.classList.toggle('show', n>0);
+  });
+});
+
+/* ============================================================
+   [JS 10] 03 인물 이미지 미세 패닝 + 일본어 장식 drift + sub-index
+   ============================================================ */
+if(!reduce){
+  $$('.person .img').forEach(function(fig){
+    fig.addEventListener('mousemove',function(e){
+      var r=fig.getBoundingClientRect();
+      fig.style.setProperty('--mx', (((e.clientX-r.left)/r.width-.5)*-2.4).toFixed(2)+'%');
+      fig.style.setProperty('--my', (((e.clientY-r.top)/r.height-.5)*-2.4).toFixed(2)+'%');
+    });
+    fig.addEventListener('mouseleave',function(){ fig.style.setProperty('--mx','0'); fig.style.setProperty('--my','0'); });
+  });
+}
+var drifts=$$('[data-drift]'), persons=$$('.person'), pLinks=$$('.p-index a');
+function updatePeople(){
+  if(!reduce) drifts.forEach(function(d){
+    var r=d.parentElement.getBoundingClientRect(); d.style.transform='translateY('+((r.top-innerHeight/2)*-.08).toFixed(1)+'px)'; });
+  var cur=null; persons.forEach(function(p){ if(p.getBoundingClientRect().top<innerHeight*.5) cur=p.id; });
+  pLinks.forEach(function(a){ a.classList.toggle('on', a.dataset.p===cur); });
+}
+
+/* ============================================================
+   [JS 11] HERO 마우스 패럴랙스 (아주 미세)
+   ============================================================ */
+var heroBg=$('#heroBg');
+if(!reduce) $('#hero').addEventListener('mousemove',function(e){
+  if(!entered) return;
+  var x=(e.clientX/innerWidth-.5)*-14, y=(e.clientY/innerHeight-.5)*-10;
+  heroBg.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';
+});
+
+/* ============================================================
+   [JS 12] 04 TIMELINE — 눈금자 SVG · 연도 scrub · lightbox
+   ============================================================ */
+var ruler=$('#ruler'), rail=$('#rail'), evs=$$('.ev'), tYear=$('#tYear');
+function buildRuler(){
+  var h=rail.offsetHeight, ns='http://www.w3.org/2000/svg', out='';
+  ruler.setAttribute('height',h);
+  for(var y=0;y<h;y+=24){ var major = (y/24)%10===0;
+    out+='<line x1="'+(major?0:7)+'" x2="14" y1="'+y+'" y2="'+y+'" class="'+(major?'major':'')+'"/>'; }
+  ruler.innerHTML=out;
+}
+function updateTimeline(){
+  var cur=null; evs.forEach(function(ev){ if(ev.getBoundingClientRect().top<innerHeight*.45) cur=ev; });
+  evs.forEach(function(ev){ ev.classList.toggle('cur', ev===cur && ev.classList.contains('now')); });
+  tYear.textContent = cur ? cur.dataset.year : '—';
+}
+var lb=$('#lb'), lbImg=$('#lbImg'), lbFig=$('#lbFig'), lbCap=$('#lbCap'), lastBtn=null;
+watch(lbImg);
+$$('.arc-btn').forEach(function(b){
+  b.addEventListener('click',function(){
+    var src=$('img',b).getAttribute('src'); lastBtn=b;
+    lbFig.dataset.file=src; lbFig.classList.remove('missing'); lbImg.src=src;
+    lbCap.textContent=b.dataset.cap; lb.classList.add('on'); $('#lbX').focus();
+  });
+});
+function closeLB(){ lb.classList.remove('on'); if(lastBtn) lastBtn.focus(); }
+$('#lbX').addEventListener('click',closeLB);
+lb.addEventListener('click',function(e){ if(e.target===lb) closeLB(); });
+addEventListener('keydown',function(e){ if(e.key==='Escape') closeLB(); });
+
+/* ============================================================
+   [JS 13] nav 클릭 시에만 smooth scroll
+   ============================================================ */
+$$('[data-nav]').forEach(function(a){
+  a.addEventListener('click',function(e){
+    var id=a.getAttribute('href'), t=id && $(id);
+    if(!t || document.body.classList.contains('is-intro')) return;
+    e.preventDefault();
+    t.scrollIntoView({behavior: reduce?'auto':'smooth', block:'start'});
+    history.replaceState(null,'',id);
+  });
+});
+
+/* ============================================================
+   [JS 14] reveal
+   ============================================================ */
+var io=new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target);} }); },
+  {rootMargin:'0px 0px -10% 0px',threshold:.08});
+$$('.rv,.rv-mask,.rv-clip').forEach(function(el){ io.observe(el); });
+
+/* ============================================================
+   [JS 15] 루프 · 이벤트 바인딩
+   ============================================================ */
+var ticking=false;
+function onScroll(){ if(ticking) return; ticking=true;
+  requestAnimationFrame(function(){ updateSections(); updateThread(); updatePeople(); updateTimeline(); ticking=false; }); }
+addEventListener('scroll',onScroll,{passive:true});
+var rz; addEventListener('resize',function(){ clearTimeout(rz); rz=setTimeout(function(){ buildRuler(); buildThread(); onScroll(); },150); });
+/* 이미지 로드/폰트 로드로 레이아웃이 바뀌면 선 재계산 */
+addEventListener('load',function(){ buildRuler(); buildThread(); });
+if(document.fonts) document.fonts.ready.then(buildThread);
+if('ResizeObserver' in window){ var ro=new ResizeObserver(function(){ clearTimeout(rz); rz=setTimeout(function(){ buildRuler(); buildThread(); },120); }); ro.observe(main); }
+(function loop(now){ drawWave(now); drawTC(now); requestAnimationFrame(loop); })(performance.now());
+
+if('scrollRestoration' in history) history.scrollRestoration='manual';
+scrollTo(0,0); buildRuler(); buildThread(); updateSections();
+
+/* ============================================================
+   [JS 100] v3 TAILORED LAYER
+   ============================================================ */
+var NS='http://www.w3.org/2000/svg';
+
+/* --- 필름 리더: 3 → 2 → 1 → 사라짐 --- */
+(function(){
+  var L=$('#leader'); if(!L) return;
+  if(reduce || sessionStorage.getItem('dr-leader')){ L.remove(); return; }
+  var sweep=$('#sweep'), num=$('#leaderNum'), ltc=$('#leaderTc'), st=performance.now(), done=false, SEC=900;
+  function arc(p){ if(p<=0) return ''; if(p>=1) p=.9999; var a=p*Math.PI*2-Math.PI/2, r=100,
+      x=Math.cos(a)*r, y=Math.sin(a)*r; return 'M0 0 L0 -100 A100 100 0 '+(p>.5?1:0)+' 1 '+x.toFixed(2)+' '+y.toFixed(2)+' Z'; }
+  function end(){ if(done) return; done=true; sessionStorage.setItem('dr-leader',1); L.classList.add('out'); setTimeout(function(){ L.remove(); },900); }
+  (function tick(now){ if(done) return; var t=now-st, i=Math.floor(t/SEC);
+    if(i>2){ end(); return; }
+    num.textContent=3-i; sweep.setAttribute('d',arc((t%SEC)/SEC));
+    var f=Math.floor(t/1000*24); ltc.textContent='00:00:'+pad2(Math.floor(f/24))+':'+pad2(f%24);
+    requestAnimationFrame(tick); })(st);
+  L.addEventListener('click',end); addEventListener('keydown',function k(){ end(); removeEventListener('keydown',k); });
+})();
+
+/* --- NO SIGNAL placeholder: 해칭 SVG + 파일명 + 해상도 표시 --- */
+function noSignal(fig){
+  if(fig.querySelector('.nosig')) return;
+  var w=fig.clientWidth||400, h=fig.clientHeight||300, g='';
+  for(var x=-h;x<w;x+=9) g+='<line x1="'+x+'" y1="'+h+'" x2="'+(x+h)+'" y2="0"/>';
+  fig.insertAdjacentHTML('afterbegin',
+    '<svg class="nosig" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><g class="hatch">'+g+'</g>'+
+    '<path class="x" d="M0 0L'+w+' '+h+'M'+w+' 0L0 '+h+'"/></svg>'+
+    '<span class="nosig-c">NO SIGNAL</span>'+
+    '<span class="nosig-lab"><span>'+(fig.dataset.file||'').split('/').pop()+'</span><b>'+w+'×'+h+'</b></span>');
+}
+function clearSignal(fig){ $$('.nosig,.nosig-c,.nosig-lab',fig).forEach(function(n){ n.remove(); }); }
+var phObs=new MutationObserver(function(m){ m.forEach(function(r){ var f=r.target;
+  if(f.classList.contains('missing')) noSignal(f); else clearSignal(f); }); });
+$$('.ph').forEach(function(f){ phObs.observe(f,{attributes:true,attributeFilter:['class']}); if(f.classList.contains('missing')) noSignal(f); });
+
+/* --- 텍스트 스크램블 (라틴 + 가타카나) --- */
+var GLY='ABCDEFGHJKLMNPRSTUVWXYZ0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノ';
+function scramble(el,text,dur){
+  if(reduce){ el.textContent=text; return; }
+  var st=performance.now(); dur=dur||700;
+  (function f(now){ var p=Math.min(1,(now-st)/dur), n=Math.floor(p*text.length), out='';
+    for(var i=0;i<text.length;i++){ var c=text[i];
+      out += (i<n||c===' '||c==='—') ? c : GLY[(Math.random()*GLY.length)|0]; }
+    el.textContent=out; if(p<1) requestAnimationFrame(f); })(st);
+}
+var idxIO=new IntersectionObserver(function(en){ en.forEach(function(x){ if(!x.isIntersecting) return;
+  var b=x.target.querySelector('b'), tn=b && b.nextSibling; if(tn && tn.nodeType===3){
+    var sp=document.createElement('span'); sp.textContent=tn.textContent; tn.replaceWith(sp); scramble(sp,sp.textContent,900); }
+  idxIO.unobserve(x.target); }); },{threshold:.6});
+$$('.chapter .idx').forEach(function(el){ idxIO.observe(el); });
+/* folio 교체 시에도 스크램블 */
+var _swap=swapFolio; swapFolio=function(sec){ _swap(sec); setTimeout(function(){ scramble(folioA,sec.dataset.folio,500); },reduce?0:320); };
+
+/* --- HERO: 2026 → 2040 롤 / 2040년 실시간 시계 / 측면 눈금 --- */
+var heroYear=$('#heroYear');
+heroYear.innerHTML='2040'.split('').map(function(d){ return '<span class="d">'+d+'</span>'; }).join('');
+$('#enterBtn').addEventListener('click',function(){
+  if(reduce) return; var ds=$$('.d',heroYear), st=performance.now();
+  (function f(now){ var p=Math.min(1,(now-st)/1400), y=Math.round(2026+(14*(1-Math.pow(1-p,3)))), s=String(y);
+    ds.forEach(function(d,i){ d.textContent = (p<1 && i>1 && Math.random()<.35) ? ((Math.random()*10)|0) : s[i]; });
+    if(p<1) requestAnimationFrame(f); else ds.forEach(function(d,i){ d.textContent='2040'[i]; }); })(st);
+});
+var clock40=$('#clock40'), WD=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+function drawClock(){ var n=new Date(Date.now()+ (9*60+new Date().getTimezoneOffset())*60000), y=new Date(n); y.setFullYear(2040);
+  clock40.textContent='2040.'+pad2(y.getMonth()+1)+'.'+pad2(y.getDate())+' '+WD[y.getDay()]+' — '+pad2(n.getHours())+':'+pad2(n.getMinutes())+':'+pad2(n.getSeconds())+' JST'; }
+drawClock(); setInterval(drawClock,1000);
+var hs=$('#heroScale');
+function drawHeroScale(){ var h=hs.clientHeight||300, off=(scrollY*.35)%12, o='<line x1="10" y1="0" x2="10" y2="'+h+'" style="opacity:.3"/>';
+  for(var y=-off;y<h;y+=12){ var k=Math.round((y+off+scrollY*.35)/12)%5===0; o+='<line x1="'+(k?0:5)+'" x2="10" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'"/>'; }
+  hs.innerHTML=o; }
+
+/* --- 01: 공지 테이프 (스크롤 속도에 반응) --- */
+var tape=$('#tapeTrack'), tx=0, vel=0, lastY=scrollY;
+var TAPE='<span><em>■</em> REDEVELOPMENT ZONE <i>再開発区域</i> KEEP OUT <i>立入禁止</i> DEMOLITION SCHEDULED 2040.11 <i>解体予定</i> KAWAGUCHI CITY <i>川口市</i></span>';
+tape.innerHTML=TAPE+TAPE+TAPE+TAPE;
+function drawTape(){ var d=scrollY-lastY; lastY=scrollY; vel += (d*.6 - vel)*.12;
+  tx -= reduce ? 0 : (.45 + Math.abs(vel)*.5) * (vel<-.5?-1:1);
+  var w=tape.firstChild.offsetWidth||1; if(tx<-w) tx+=w; if(tx>0) tx-=w;
+  tape.style.transform='translate('+tx.toFixed(1)+'px,-50%)'; }
+
+/* --- 01: 지도 스캔라인 + 좌표 판독 --- */
+var kscan=$('#kscan'), kRead=$('#kmapRead'), kCoord=$('#kmapCoord'), LOCN={redev:'A · 再開発区域',night:'B · 歓楽街',arakawa:'C · 荒川',industrial:'D · 工業地帯'};
+var COORD={redev:[35.8076,139.7244],night:[35.8031,139.7178],arakawa:[35.7952,139.7197],industrial:[35.8162,139.7035]};
+$$('.k-shot').forEach(function(el){
+  el.addEventListener('mouseenter',function(){ var c=COORD[el.dataset.loc]; kRead.textContent='▸ '+LOCN[el.dataset.loc]; scramble(kCoord,c[0].toFixed(4)+' / '+c[1].toFixed(4),400); });
+  el.addEventListener('mouseleave',function(){ kRead.textContent='— STANDBY'; });
+});
+function drawScan(now){ if(reduce) return; var y=14+((now/40)%126); kscan.setAttribute('y1',y.toFixed(1)); kscan.setAttribute('y2',y.toFixed(1)); }
+
+/* --- 03: RESIST 도장 + 카운터 셀 + 6/6 해금 --- */
+var cells=$$('#rcCells i'), toast=$('#toast'), tT;
+function showToast(html){ toast.innerHTML=html; toast.classList.add('on'); clearTimeout(tT); tT=setTimeout(function(){ toast.classList.remove('on'); },2600); }
+$$('.dogma').forEach(function(dg,i){
+  var n=pad2(i+1);
+  dg.insertAdjacentHTML('beforeend','<svg class="stamp" viewBox="0 0 62 62" aria-hidden="true"><rect x="3" y="3" width="56" height="56"/><rect x="7" y="7" width="48" height="48" style="stroke-width:.6"/><text x="31" y="34" font-size="20">抵抗</text><text class="sm" x="31" y="48">No.'+n+' · 2040</text></svg>');
+  $('.resist-btn',dg).addEventListener('click',function(){
+    var k=$$('.dogma.resisted').length;
+    cells.forEach(function(c,j){ c.classList.toggle('on', j<k); });
+    var all=k===6, was=document.body.classList.contains('all-resisted');
+    document.body.classList.toggle('all-resisted',all);
+    if(all && !was) showToast('<b>6 / 6</b> ALL DOGMA RESISTED — 教義破棄. 선은 이제 다른 색으로 이어집니다.');
+    else if(dg.classList.contains('resisted')) showToast('DOGMA '+n+' <b>RESISTED</b> · '+k+' / 6');
+  });
+});
+
+/* --- 04: 눈금자 판독 바늘 --- */
+var _br=buildRuler; buildRuler=function(){ _br();
+  ruler.insertAdjacentHTML('beforeend','<line class="needle" id="needle" x1="-22" x2="14" y1="0" y2="0"/><rect class="needle-t" id="needleT" x="-25" y="-2" width="4" height="4"/>'); };
+function drawNeedle(){ var nd=$('#needle'), nt=$('#needleT'); if(!nd) return;
+  var r=rail.getBoundingClientRect(), y=Math.max(0,Math.min(r.height,innerHeight*.45-r.top));
+  nd.setAttribute('y1',y); nd.setAttribute('y2',y); nt.setAttribute('y',y-2); }
+
+/* --- 키보드: 0–4 챕터 이동 · R = 화면 중앙에 가장 가까운 DOGMA 저항 --- */
+addEventListener('keydown',function(e){
+  if(!entered || e.metaKey || e.ctrlKey || e.altKey || /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+  if(/^[0-4]$/.test(e.key)){ var t=sections[+e.key]; if(t) t.scrollIntoView({behavior:reduce?'auto':'smooth'}); }
+  if(e.key==='r'||e.key==='R'){ var best=null, bd=1e9;
+    $$('.dogma').forEach(function(d){ var r=d.getBoundingClientRect(), dd=Math.abs(r.top+r.height/2-innerHeight/2); if(dd<bd){bd=dd;best=d;} });
+    if(best && bd<innerHeight*.5) $('.resist-btn',best).click(); }
+});
+
+/* --- v3 루프 --- */
+(function v3(now){ drawTape(); drawScan(now); drawNeedle(); if(scrollY<innerHeight*1.2) drawHeroScale(); requestAnimationFrame(v3); })(performance.now());
+buildRuler();
+})();
+</script>
+</body>
+</html>
