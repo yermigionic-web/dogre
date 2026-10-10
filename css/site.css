@@ -66,7 +66,7 @@ html.is-gated .site-nav{opacity:0;pointer-events:none;transform:translateY(-8px)
 .frame-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(196,199,194,.94) 0%,rgba(196,199,194,.76) 24%,rgba(196,199,194,.16) 48%,rgba(196,199,194,0) 68%);pointer-events:none}
 .frame-hero img{object-position:center 30%}
 .hero-panel{position:absolute;z-index:1;left:0;top:0;width:min(39vw,34rem);height:100%;border-right:1px solid rgba(18,19,19,.22);pointer-events:none}
-.hero-logo{position:absolute;z-index:3;left:clamp(1.6rem,5vw,5.5rem);top:6vh;margin:0;height:min(64vh,42rem);transition:height var(--move) var(--ease),top var(--move) var(--ease)}
+.hero-logo{position:absolute;z-index:3;left:clamp(1.6rem,5vw,5.5rem);top:6vh;margin:0;height:min(64vh,42rem);transition:height var(--move) var(--ease),top var(--move) var(--ease),opacity 420ms var(--ease)}
 .hero-logo img{height:100%;width:auto;max-width:none}
 .hero-index{position:absolute;z-index:3;right:4vw;top:4vh;margin:0;font:500 clamp(3rem,6vw,6rem)/.8 var(--display);opacity:.8}
 .hero-meta{position:absolute;z-index:3;left:clamp(1.6rem,5vw,5.5rem);bottom:19vh}
@@ -81,7 +81,7 @@ html.is-gated .site-nav{opacity:0;pointer-events:none;transform:translateY(-8px)
 .enter-arrow{font:400 1.4rem/1 var(--sans)}
 .hero-note{position:absolute;z-index:3;right:4vw;bottom:4.6vh;margin:0;font:600 8px/1 var(--sans);letter-spacing:.16em;opacity:.65}
 html:not(.is-gated) .enter{opacity:0;pointer-events:none;transform:translateY(8px)}
-html:not(.is-gated) .hero-logo{height:min(69vh,45rem);top:4vh}
+html:not(.is-gated) .hero-logo{height:min(69vh,45rem);top:4vh;opacity:0;pointer-events:none}
 
 /* 01 — city */
 .chapter-kawaguchi{padding:15vh var(--pad) 13vh;background:transparent}
@@ -171,7 +171,7 @@ figcaption{display:grid;grid-template-columns:auto 1fr auto;gap:.9rem;margin-top
   .sound{top:auto;bottom:.9rem;right:.9rem}
   .hero-panel{width:54vw}
   .hero-logo{left:1.25rem;height:46vh}
-  html:not(.is-gated) .hero-logo{height:49vh}
+  html:not(.is-gated) .hero-logo{height:49vh;opacity:0;pointer-events:none}
   .hero-meta{left:1.25rem;bottom:20vh}
   .hero-year{font-size:clamp(4rem,17vw,6.6rem)}
   .enter{left:1.25rem;bottom:5.2vh;width:calc(100vw - 2.5rem)}
@@ -202,7 +202,7 @@ figcaption{display:grid;grid-template-columns:auto 1fr auto;gap:.9rem;margin-top
   .hero-panel{width:72vw}
   .frame-hero::after{background:linear-gradient(90deg,rgba(196,199,194,.95) 0%,rgba(196,199,194,.72) 42%,rgba(196,199,194,.05) 77%)}
   .hero-logo{top:4.8rem;height:40vh}
-  html:not(.is-gated) .hero-logo{top:4.3rem;height:42vh}
+  html:not(.is-gated) .hero-logo{top:4.3rem;height:42vh;opacity:0;pointer-events:none}
   .hero-index{top:4.2rem;right:1rem;font-size:2.5rem}
   .hero-meta{bottom:21vh}
   .section-masthead,.people-intro,.timeline-head{grid-template-columns:3rem 1fr}
