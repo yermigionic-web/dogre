@@ -22,7 +22,7 @@
   audio.loop = true;
   audio.preload = "auto";
   audio.volume = 0.35;
-  audio.src = "assets/audio/bgm.mp3";
+  audio.src = "audio/bgm.mp3";
 
   let audioState = "pending";
   audio.addEventListener("error", function () {
