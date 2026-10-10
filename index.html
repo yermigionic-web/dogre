@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko" class="is-gated">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOGMA RESIST</title>
+  <meta name="description" content="2040, 카와구치. DOGMA RESIST">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Noto+Serif+JP:wght@400;500;600&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/site.css">
+  <noscript>
+    <style>
+      html.is-gated, html.is-gated body { overflow: auto; height: auto; }
+      .enter { display: none; }
+      html.is-gated .site-nav { opacity: 1; pointer-events: auto; }
+      .hero-index { opacity: 1; }
+    </style>
+  </noscript>
+</head>
+<body>
+  <a class="skip" href="#hero">본문으로</a>
+
+  <nav class="site-nav" aria-label="섹션">
+    <a href="#hero" data-nav="hero">00</a>
+    <a href="#kawaguchi" data-nav="kawaguchi">01</a>
+    <a href="#entry" data-nav="entry">02</a>
+    <a href="#people" data-nav="people">03</a>
+    <a href="#timeline" data-nav="timeline">04</a>
+  </nav>
+
+  <button type="button" class="sound" id="sound" hidden aria-pressed="true">SOUND ON</button>
+
+  <main>
+    <section class="chapter chapter-hero" id="hero" data-tone="hero">
+      <div class="frame frame-hero is-placeholder">
+        <span class="frame-name">hero-cast.png</span>
+        <img src="assets/images/hero-cast.png" alt="히어로">
+      </div>
+
+      <p class="hero-index" aria-hidden="true">00</p>
+
+      <h1 class="hero-logo">
+        <img src="assets/logo/dogma_resist_main_logo.png" alt="DOGMA RESIST" width="462" height="1477">
+      </h1>
+
+      <div class="hero-meta">
+        <p class="hero-year">2040</p>
+        <p class="hero-place">KAWAGUCHI, SAITAMA</p>
+      </div>
+
+      <button type="button" class="enter" id="enter">
+        <span class="enter-line" aria-hidden="true"></span>
+        ENTER
+      </button>
+    </section>
+
+    <section class="chapter chapter-kawaguchi" id="kawaguchi" data-tone="kawaguchi">
+      <div class="k-wrap">
+        <header class="k-head reveal">
+          <p class="chapter-index index-k">01</p>
+          <h2>카와구치</h2>
+          <p class="jp">川口 · 埼玉</p>
+        </header>
+
+        <figure class="shot shot-re reveal">
+          <div class="frame frame-land is-placeholder">
+            <span class="frame-name">city-redevelopment.png</span>
+            <img src="assets/images/city/city-redevelopment.png" alt="카와구치 재개발 구역" loading="lazy">
+          </div>
+          <figcaption><span class="cap-ko">재개발 구역</span><span class="cap-jp">再開発</span></figcaption>
+        </figure>
+
+        <figure class="shot shot-night reveal">
+          <div class="frame frame-tall is-placeholder">
+            <span class="frame-name">city-night.png</span>
+            <img src="assets/images/city/city-night.png" alt="카와구치의 밤" loading="lazy">
+          </div>
+          <figcaption><span class="cap-ko">밤의 거리</span><span class="cap-jp">夜</span></figcaption>
+        </figure>
+
+        <div class="k-prose reveal">
+          <p>재개발은 이 도시의 가장자리를 먼저 건드린다. 새 상업시설이 들어선 자리 옆으로, 아직 문을 연 클럽과 오래된 조명이 남아 있다.</p>
+          <p>강 건너와 공장 지대는 같은 하늘 아래 다른 속도로 어두워진다. 2040년의 카와구치는 사라지는 거리와 새로 붙는 이름이 한 블록 안에서 겹친 도시다.</p>
+        </div>
+
+        <div class="k-rule" aria-hidden="true"></div>
+
+        <figure class="shot shot-ara reveal">
+          <div class="frame frame-wide is-placeholder">
+            <span class="frame-name">city-arakawa.png</span>
+            <img src="assets/images/city/city-arakawa.png" alt="아라카와" loading="lazy">
+          </div>
+          <figcaption><span class="cap-ko">아라카와</span><span class="cap-jp">荒川</span></figcaption>
+        </figure>
+
+        <figure class="shot shot-ind reveal">
+          <div class="frame frame-sq is-placeholder">
+            <span class="frame-name">city-industrial.png</span>
+            <img src="assets/images/city/city-industrial.png" alt="공장 지대" loading="lazy">
+          </div>
+          <figcaption><span class="cap-ko">공장 지대</span><span class="cap-jp">工業地帯</span></figcaption>
+        </figure>
+      </div>
+      <div class="rule-h" aria-hidden="true"></div>
+    </section>
+
+    <section class="chapter chapter-entry" id="entry" data-tone="entry">
+      <p class="chapter-index index-e">02</p>
+      <div class="entry-spread">
+        <article class="route route-a">
+          <p class="ab">A</p>
+          <h2>토도구미</h2>
+          <p class="jp">藤堂組</p>
+          <div class="frame frame-entry is-placeholder">
+            <span class="frame-name">entry-todogumi.png</span>
+            <img src="assets/images/entry/entry-todogumi.png" alt="토도구미" loading="lazy">
+          </div>
+          <p class="route-copy">고베에서 이어진 조직의 관동 실무. 토지와 계열, 업자와 사람을 조율하는 쪽.</p>
+          <p class="route-go" aria-hidden="true"><span class="hover-line"></span><span class="arrow">→</span></p>
+          <p class="cap"><span class="cap-ko">고베 · 관동</span><span class="cap-jp">神戸</span></p>
+        </article>
+
+        <div class="v-rule" aria-hidden="true"></div>
+
+        <article class="route route-b">
+          <p class="ab">B</p>
+          <h2>카와구치</h2>
+          <p class="jp">川口</p>
+          <div class="frame frame-entry is-placeholder">
+            <span class="frame-name">entry-kawaguchi.png</span>
+            <img src="assets/images/entry/entry-kawaguchi.png" alt="카와구치" loading="lazy">
+          </div>
+          <p class="route-copy">이 거리에 남아 일을 이어 가는 쪽. 클럽, 심부름, 단기 노동, 서류 사이의 틈.</p>
+          <p class="route-go" aria-hidden="true"><span class="hover-line"></span><span class="arrow">→</span></p>
+          <p class="cap"><span class="cap-ko">사이타마</span><span class="cap-jp">埼玉</span></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="chapter chapter-people" id="people" data-tone="people">
+      <p class="chapter-index index-p reveal">03</p>
+
+      <article class="person person-mai">
+        <div class="frame frame-person is-placeholder">
+          <span class="frame-name">cast-mai.png</span>
+          <img src="assets/images/cast/cast-mai.png" alt="아키야마 마이" loading="lazy">
+        </div>
+        <header class="person-name">
+          <h2>아키야마 마이</h2>
+          <p class="jp">秋山 舞</p>
+          <p class="role">49세 · 클럽 사장 / 유흥가 중간조정자</p>
+        </header>
+        <p class="vignette">카와구치 유흥가에서 오래 살아남은 사람. 재개발 구역에 걸린 클럽을 아직 운영하고 있다. 웬만한 문제는 웃으며 말로 끝내고, 자기 일은 농담처럼 넘긴다. 끝났다는 사실을 알아도 먼저 손을 놓는 데 익숙하지 않다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>진심은 말하지 않는 편이 안전하다.</p>
+      </article>
+
+      <article class="person person-natsume">
+        <div class="frame frame-person is-placeholder">
+          <span class="frame-name">cast-natsume.png</span>
+          <img src="assets/images/cast/cast-natsume.png" alt="쿠로키 나츠메" loading="lazy">
+        </div>
+        <p class="age-mark" aria-hidden="true">32</p>
+        <header class="person-name">
+          <h2>쿠로키 나츠메</h2>
+          <p class="jp">黒木 夏芽</p>
+          <p class="role">32세 · 프리랜서 해결사 / 심부름꾼</p>
+        </header>
+        <p class="vignette">퇴거 연락, 잠적자 추적, 물건 회수처럼 남들이 꺼리는 잡일을 소개받아 처리한다. 2026년 폐교 전 키요미즈 고교의 문제학생이었고 MMA 선수 경력도 있다. 지금은 싸울 수 있다는 것보다 싸운 뒤가 얼마나 귀찮은지를 먼저 계산한다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>기대하지 않으면 버려질 일도 없다.</p>
+      </article>
+
+      <article class="person person-nana">
+        <div class="frame frame-person is-placeholder">
+          <span class="frame-name">cast-nana.png</span>
+          <img src="assets/images/cast/cast-nana.png" alt="이시하라 나나" loading="lazy">
+        </div>
+        <header class="person-name">
+          <h2>이시하라 나나</h2>
+          <p class="jp">石原 菜々</p>
+          <p class="role">35세 · 라이프스타일 인플루언서 / 브랜드 모델</p>
+        </header>
+        <p class="vignette">카와구치에 새로 들어선 상업시설과 브랜드의 얼굴이 되는 사람. 카메라 앞에서 필요한 모습을 정확하게 알고, 사적인 감정과 자신이 내릴 선택을 구분한다. 새 도시를 홍보하며 자신이 알던 오래된 도시가 사라지는 것도 함께 본다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>감정과 선택은 분리할 수 있다.</p>
+      </article>
+
+      <article class="person person-miu">
+        <div class="frame frame-person is-placeholder">
+          <span class="frame-name">cast-miu.png</span>
+          <img src="assets/images/cast/cast-miu.png" alt="사토 미우" loading="lazy">
+        </div>
+        <header class="person-name">
+          <h2>사토 미우</h2>
+          <p class="jp">佐藤 美羽</p>
+          <p class="role">29세 · 무직에 가까운 단기노동자</p>
+        </header>
+        <p class="vignette">행사 스태프, 매장 대타, 중고거래 같은 일로 그때그때 돈을 번다. 싸고 오래된 방과 밤늦게까지 머물 장소를 전전하며 살아간다. 자기파괴조차 자기 선택이어야 한다고 여기지만, 다른 사람이 같은 방식으로 망가지는 것은 쉽게 지나치지 못한다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>내 몸과 내 인생은 나만 망칠 수 있다.</p>
+      </article>
+
+      <article class="person person-kazuki">
+        <div class="frame frame-person is-placeholder">
+          <span class="frame-name">cast-kazuki.png</span>
+          <img src="assets/images/cast/cast-kazuki.png" alt="니시 카즈키" loading="lazy">
+        </div>
+        <p class="jp-vert">西 一希<span>藤堂組</span></p>
+        <header class="person-name">
+          <h2>니시 카즈키</h2>
+          <p class="jp">西 一希</p>
+          <p class="role">39세 · 藤堂組 차기보스 / 관동 실무책임자</p>
+        </header>
+        <p class="vignette">고베 기반 대형 조직 토도구미의 후계자. 관동에서 토지·계열회사·업자·조직원의 문제를 조정한다. 공식석상에서는 머리를 넘기고 정장을 입지만 사적인 자리에서는 자신의 배경을 최대한 감춘다. 강하지만 충돌 자체를 좋아하지 않는다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>내 배경을 알면 사람은 결국 나를 다르게 본다.</p>
+      </article>
+
+      <article class="person person-azusa">
+        <div class="frame frame-person frame-wide-crop is-placeholder">
+          <span class="frame-name">cast-azusa.png</span>
+          <img src="assets/images/cast/cast-azusa.png" alt="세카이바시 아즈사" loading="lazy">
+        </div>
+        <header class="person-name">
+          <h2>세카이바시 아즈사</h2>
+          <p class="jp">世界橋 梓</p>
+          <p class="role">41세 · 브로커형 사기꾼</p>
+        </header>
+        <p class="vignette">명의, 채권, 재개발 보상금, 유령법인처럼 서류와 제도 사이의 틈에서 돈을 만든다. 평소에는 사람에게 별 관심이 없지만 필요할 때는 믿기 어려울 만큼 사교적이다. 거짓말은 방어이자 업무도구이며, 오히려 가까운 사람에게 갈수록 거짓말이 줄어든다.</p>
+        <p class="dogma"><span class="dogma-label">DOGMA</span>진실은 필요할 때만 말하면 된다.</p>
+      </article>
+
+      <div class="people-end" aria-hidden="true"></div>
+    </section>
+
+    <section class="chapter chapter-timeline" id="timeline" data-tone="timeline">
+      <p class="chapter-index index-t">04</p>
+      <ol class="rail-list">
+        <li class="t-item reveal">
+          <div class="t-slot">
+            <p class="t-name">藤堂組</p>
+          </div>
+          <div class="t-body">
+            <h2>토도구미</h2>
+            <p class="t-text">고베 기반의 실무가 관동의 토지와 사람 사이에 있다.</p>
+            <div class="frame frame-arch is-placeholder">
+              <span class="frame-name">timeline-todogumi.png</span>
+              <img src="assets/images/timeline/timeline-todogumi.png" alt="토도구미 기록" loading="lazy">
+            </div>
+          </div>
+        </li>
+        <li class="t-item reveal">
+          <div class="t-slot">
+            <p class="t-year">2026</p>
+          </div>
+          <div class="t-body">
+            <h2>키요미즈 고교</h2>
+            <p class="t-text">폐교. 그 전의 문제학생이 아직 이 도시의 일로 돌아다닌다.</p>
+            <div class="frame frame-arch is-placeholder">
+              <span class="frame-name">timeline-kiyomizu.png</span>
+              <img src="assets/images/timeline/timeline-kiyomizu.png" alt="키요미즈 고교" loading="lazy">
+            </div>
+          </div>
+        </li>
+        <li class="t-item reveal">
+          <div class="t-slot">
+            <p class="t-name">재개발</p>
+          </div>
+          <div class="t-body">
+            <h2>상업시설과 유흥가</h2>
+            <p class="t-text">새 얼굴이 들어선 자리와, 아직 문을 연 클럽이 같은 구역에 겹친다.</p>
+            <div class="frame frame-arch is-placeholder">
+              <span class="frame-name">timeline-redevelopment.png</span>
+              <img src="assets/images/timeline/timeline-redevelopment.png" alt="재개발 기록" loading="lazy">
+            </div>
+          </div>
+        </li>
+        <li class="t-item t-now reveal">
+          <div class="t-slot">
+            <span class="g-mark" aria-hidden="true"></span>
+            <p class="t-year">2040</p>
+            <p class="now-label">NOW</p>
+          </div>
+          <div class="t-body">
+            <h2>카와구치</h2>
+            <p class="t-text">사이타마.</p>
+            <div class="frame frame-arch is-placeholder">
+              <span class="frame-name">timeline-now.png</span>
+              <img src="assets/images/timeline/timeline-now.png" alt="2040년의 카와구치" loading="lazy">
+            </div>
+          </div>
+        </li>
+      </ol>
+      <div class="rail" aria-hidden="true"></div>
+    </section>
+  </main>
+
+  <script src="js/site.js"></script>
+</body>
+</html>
