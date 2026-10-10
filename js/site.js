@@ -2,16 +2,17 @@
   const root = document.documentElement;
   const enterBtn = document.getElementById("enter");
   const soundBtn = document.getElementById("sound");
-  const navLinks = Array.from(document.querySelectorAll(".site-nav a"));
+  const soundLabel = soundBtn ? soundBtn.querySelector(".sound-label") : null;
+  const navLinks = Array.from(document.querySelectorAll(".site-nav a[data-nav]"));
   const chapters = Array.from(document.querySelectorAll(".chapter"));
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const tones = {
-    hero: [191, 193, 191],
-    kawaguchi: [210, 211, 209],
-    entry: [197, 198, 196],
-    people: [185, 187, 185],
-    timeline: [174, 176, 174]
+    hero: [174, 177, 173],
+    kawaguchi: [205, 207, 203],
+    entry: [187, 190, 186],
+    people: [194, 196, 192],
+    timeline: [174, 177, 173]
   };
 
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -25,16 +26,20 @@
   audio.src = "audio/bgm.mp3";
 
   let audioState = "pending";
+  let entered = false;
+
   audio.addEventListener("error", function () {
     audioState = "missing";
-    soundBtn.hidden = true;
+    if (soundBtn) soundBtn.hidden = true;
   });
+
   audio.addEventListener("canplay", function () {
     if (audioState !== "missing") audioState = "ready";
   });
 
   function setSoundLabel(on) {
-    soundBtn.textContent = on ? "SOUND ON" : "SOUND OFF";
+    if (!soundBtn) return;
+    if (soundLabel) soundLabel.textContent = on ? "SOUND ON" : "SOUND OFF";
     soundBtn.setAttribute("aria-pressed", on ? "true" : "false");
   }
 
@@ -49,37 +54,42 @@
     }
   }
 
-  let entered = false;
-  enterBtn.addEventListener("click", async function () {
-    if (entered) return;
-    entered = true;
-    root.classList.remove("is-gated");
-    enterBtn.disabled = true;
-    enterBtn.setAttribute("aria-hidden", "true");
-    const ok = await startAudio();
-    if (ok && !audio.paused) {
-      soundBtn.hidden = false;
-      setSoundLabel(true);
-    } else {
-      soundBtn.hidden = true;
-    }
-    requestAnimationFrame(joinSpine);
-  });
+  if (enterBtn) {
+    enterBtn.addEventListener("click", async function () {
+      if (entered) return;
+      entered = true;
+      root.classList.remove("is-gated");
+      enterBtn.disabled = true;
+      enterBtn.setAttribute("aria-hidden", "true");
 
-  soundBtn.addEventListener("click", async function () {
-    if (audioState !== "ready") return;
-    if (audio.paused) {
-      try {
-        await audio.play();
-        setSoundLabel(true);
-      } catch (err) {
-        soundBtn.hidden = true;
+      const ok = await startAudio();
+      if (soundBtn) {
+        if (ok && !audio.paused) {
+          soundBtn.hidden = false;
+          setSoundLabel(true);
+        } else {
+          soundBtn.hidden = true;
+        }
       }
-    } else {
-      audio.pause();
-      setSoundLabel(false);
-    }
-  });
+    });
+  }
+
+  if (soundBtn) {
+    soundBtn.addEventListener("click", async function () {
+      if (audioState === "missing") return;
+      if (audio.paused) {
+        try {
+          await audio.play();
+          setSoundLabel(true);
+        } catch (err) {
+          soundBtn.hidden = true;
+        }
+      } else {
+        audio.pause();
+        setSoundLabel(false);
+      }
+    });
+  }
 
   navLinks.forEach(function (link) {
     link.addEventListener("click", function (event) {
@@ -91,9 +101,27 @@
       const target = document.getElementById(id);
       if (!target) return;
       event.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start"
+      });
     });
   });
+
+  const brand = document.querySelector(".nav-brand");
+  if (brand) {
+    brand.addEventListener("click", function (event) {
+      if (root.classList.contains("is-gated")) {
+        event.preventDefault();
+        return;
+      }
+      event.preventDefault();
+      document.getElementById("hero").scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+  }
 
   function setActive(id) {
     navLinks.forEach(function (link) {
@@ -105,39 +133,38 @@
 
   setActive("hero");
 
-  const activeObs = new IntersectionObserver(
-    function (entries) {
-      const visible = entries
-        .filter(function (entry) { return entry.isIntersecting; })
-        .sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; });
-      if (visible[0]) setActive(visible[0].target.id);
-    },
-    { rootMargin: "-42% 0px -48% 0px", threshold: [0, 0.25, 0.5] }
-  );
-  chapters.forEach(function (chapter) { activeObs.observe(chapter); });
-
-  if (reduceMotion) {
-    document.querySelectorAll(".reveal, .frame").forEach(function (el) {
-      el.classList.add("is-in");
-    });
-  } else {
-    const revealObs = new IntersectionObserver(
+  if ("IntersectionObserver" in window) {
+    const activeObs = new IntersectionObserver(
       function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          entry.target.classList.add("is-in");
-          revealObs.unobserve(entry.target);
-        });
+        const visible = entries
+          .filter(function (entry) { return entry.isIntersecting; })
+          .sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; });
+        if (visible[0]) setActive(visible[0].target.id);
       },
-      { threshold: 0.18, rootMargin: "0px 0px -6% 0px" }
+      { rootMargin: "-36% 0px -52% 0px", threshold: [0, 0.2, 0.45, 0.7] }
     );
+    chapters.forEach(function (chapter) { activeObs.observe(chapter); });
+
+    if (!reduceMotion) {
+      const revealObs = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-in");
+            revealObs.unobserve(entry.target);
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -7% 0px" }
+      );
+      document.querySelectorAll(".reveal").forEach(function (el) {
+        revealObs.observe(el);
+      });
+    }
+  }
+
+  if (reduceMotion || !("IntersectionObserver" in window)) {
     document.querySelectorAll(".reveal").forEach(function (el) {
-      revealObs.observe(el);
-    });
-    document.querySelectorAll(".frame").forEach(function (el) {
-      if (el.classList.contains("frame-hero")) return;
-      el.classList.add("clip");
-      revealObs.observe(el);
+      el.classList.add("is-in");
     });
   }
 
@@ -147,24 +174,25 @@
       frame.classList.add("is-placeholder");
       return;
     }
+
     function ready() {
       frame.classList.add("is-ready");
       frame.classList.remove("is-placeholder");
-      const name = frame.querySelector(".frame-name");
-      if (name) name.remove();
     }
+
     function fail() {
       img.remove();
       frame.classList.add("is-placeholder");
       frame.classList.remove("is-ready");
     }
+
     if (img.complete) {
       if (img.naturalWidth > 0) ready();
       else fail();
-      return;
+    } else {
+      img.addEventListener("load", ready, { once: true });
+      img.addEventListener("error", fail, { once: true });
     }
-    img.addEventListener("load", ready);
-    img.addEventListener("error", fail);
   });
 
   function mix(a, b, t) {
@@ -178,24 +206,28 @@
   function sampleColor() {
     const focus = window.scrollY + window.innerHeight * 0.42;
     let index = 0;
+
     chapters.forEach(function (chapter, i) {
       if (focus >= chapter.offsetTop) index = i;
     });
+
     const current = tones[chapters[index].dataset.tone];
     const nextChapter = chapters[index + 1];
     if (!nextChapter) return current;
+
     const next = tones[nextChapter.dataset.tone];
     const edge = chapters[index].offsetTop + chapters[index].offsetHeight;
-    const blend = window.innerHeight * 0.55;
+    const blend = Math.min(window.innerHeight * 0.7, 720);
     const start = edge - blend;
+
     if (focus <= start) return current;
-    const t = Math.min(1, (focus - start) / (blend * 1.35));
+    const t = Math.min(1, Math.max(0, (focus - start) / blend));
     return mix(current, next, t);
   }
 
   function paintGround() {
     const rgb = sampleColor();
-    root.style.setProperty("--ground", "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")");
+    root.style.setProperty("--ground", "rgb(" + rgb.join(", ") + ")");
   }
 
   let ticking = false;
@@ -207,33 +239,6 @@
       ticking = false;
     });
   }, { passive: true });
+
   paintGround();
-
-  const mobileQuery = window.matchMedia("(max-width: 860px)");
-
-  function joinSpine() {
-    const rule = document.querySelector(".v-rule");
-    const title = document.querySelector(".person-mai h2");
-    if (!rule || !title) return;
-    if (mobileQuery.matches) {
-      rule.style.setProperty("--spine-extra", "0px");
-      return;
-    }
-    const from = rule.getBoundingClientRect().bottom + window.scrollY;
-    const box = title.getBoundingClientRect();
-    const fontSize = parseFloat(getComputedStyle(title).fontSize) || 16;
-    const y = box.top + window.scrollY + fontSize * 0.62;
-    rule.style.setProperty("--spine-extra", Math.max(0, y - from) + "px");
-    const spineX = rule.getBoundingClientRect().left;
-    const titleX = box.left;
-    title.style.setProperty("--name-rule", Math.max(0, titleX - spineX - 20) + "px");
-  }
-
-  window.addEventListener("resize", joinSpine);
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(joinSpine);
-  } else {
-    window.addEventListener("load", joinSpine);
-  }
-  joinSpine();
 })();
